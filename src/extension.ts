@@ -16,9 +16,76 @@ import {
   findTypeholeFactories,
 } from "./parse/module";
 
+const fastify = f({ logger: true });
+fastify.register(require("fastify-cors"));
+
 export function activate(context: vscode.ExtensionContext) {
   const editor = vscode.window.activeTextEditor!;
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider(
+      ["typescript", "typescriptreact"],
+      new TypeHoler()
+    )
+  );
 
+  vscode.commands.registerCommand(
+    "extension.typehole.add-a-typehole",
+    async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return;
+      }
+      const document = editor.document;
+      if (!document) {
+        return;
+      }
+
+      const fullFile = document.getText();
+
+      const ast = getAST(fullFile);
+      const existingImport = findTypeHoleImport(ast);
+      const lastImport = findLastImport(ast);
+
+      const id = findTypeholes(ast).length;
+
+      await editor.edit((editBuilder) => {
+        /* Import typehole if not already imported */
+        if (existingImport.length === 0) {
+          const position = lastImport
+            ? getNodeEndPosition(lastImport)
+            : new vscode.Position(0, 0);
+          editBuilder.insert(
+            new vscode.Position(position.line, position.character),
+            "\n" + getTypeHoleImport() + "\n"
+          );
+        }
+
+        /* Wrap recorder around selection */
+        const selection = editor.selection;
+        const selectedText = editor.document.getText(selection);
+
+        editBuilder.replace(selection, wrapIntoRecorder(id, selectedText));
+
+        /* Create recorder from factory */
+        const factories = findTypeholeFactories(ast);
+
+        const factoryCallPosition =
+          factories.length > 0
+            ? getNodeEndPosition(factories[factories.length - 1].parent)
+            : lastImport
+            ? getNodeEndPosition(lastImport)
+            : new vscode.Position(0, 0);
+
+        editBuilder.insert(
+          new vscode.Position(
+            factoryCallPosition.line,
+            factoryCallPosition.character
+          ),
+          "\n" + getTypeHoleFactoryCall(id) + "\n"
+        );
+      });
+    }
+  );
   startListenerServer((id: number, types: string[]) => {
     const result = insertTypes(
       id,
@@ -28,29 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     replaceCurrentEditorContent(editor, result);
   });
-
-  context.subscriptions.push(
-    vscode.languages.registerCodeActionsProvider(
-      "typescript",
-      new TypeHoler(),
-      {
-        providedCodeActionKinds: TypeHoler.providedCodeActionKinds,
-      }
-    )
-  );
-  context.subscriptions.push(
-    vscode.languages.registerCodeActionsProvider(
-      "typescriptreact",
-      new TypeHoler(),
-      {
-        providedCodeActionKinds: TypeHoler.providedCodeActionKinds,
-      }
-    )
-  );
 }
-
-const fastify = f({ logger: true });
-fastify.register(require("fastify-cors"));
 
 function startListenerServer(
   onTypeExtracted: (id: number, types: string[]) => void
@@ -79,7 +124,7 @@ export function deactivate() {
 }
 
 function replaceCurrentEditorContent(te: vscode.TextEditor, result: string) {
-  te.edit((editBuilder) => {
+  return te.edit((editBuilder) => {
     try {
       editBuilder.replace(
         new vscode.Range(
@@ -105,70 +150,18 @@ export class TypeHoler implements vscode.CodeActionProvider {
   public provideCodeActions(
     document: vscode.TextDocument,
     range: vscode.Range
-  ): vscode.CodeAction[] | undefined {
+  ): vscode.ProviderResult<vscode.Command[]> {
     const selectedText = document.getText(range);
-    const expression = isExpression(selectedText);
-    if (!expression) {
+    const shouldOfferAction = isExpression(selectedText);
+    if (!shouldOfferAction) {
       return;
     }
 
-    const fix = new vscode.CodeAction(
-      `Insert a typehole`,
-      vscode.CodeActionKind.Refactor
-    );
-
-    fix.edit = new vscode.WorkspaceEdit();
-    const fullFile = document.getText();
-
-    const ast = getAST(fullFile);
-    const existingImport = findTypeHoleImport(ast);
-    const lastImport = findLastImport(ast);
-
-    const id = findTypeholes(ast).length;
-    /* Import typehole if not already imported */
-    if (existingImport.length === 0) {
-      if (!lastImport) {
-        fix.edit.insert(
-          document.uri,
-          new vscode.Position(0, 0),
-          getTypeHoleImport() + "\n"
-        );
-      } else {
-        const position = getNodeEndPosition(lastImport);
-        fix.edit.insert(
-          document.uri,
-          new vscode.Position(position.line, position.character),
-          "\n" + getTypeHoleImport() + "\n"
-        );
-      }
-    }
-
-    /* Wrap recorder around selection */
-    fix.edit.replace(
-      document.uri,
-      new vscode.Range(range.start, range.end),
-      wrapIntoRecorder(id, selectedText)
-    );
-
-    /* Create recorder from factory */
-    const factories = findTypeholeFactories(ast);
-
-    const factoryCallPosition =
-      factories.length > 0
-        ? getNodeEndPosition(factories[factories.length - 1].parent)
-        : lastImport
-        ? getNodeEndPosition(lastImport)
-        : new vscode.Position(0, 0);
-
-    fix.edit.insert(
-      document.uri,
-      new vscode.Position(
-        factoryCallPosition.line,
-        factoryCallPosition.character
-      ),
-      "\n" + getTypeHoleFactoryCall(id) + "\n"
-    );
-
-    return [fix];
+    return [
+      {
+        command: "extension.typehole.add-a-typehole",
+        title: "Add a typehole",
+      },
+    ];
   }
 }
