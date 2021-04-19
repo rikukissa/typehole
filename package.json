@@ -10,7 +10,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:type-sampler.helloWorld"
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -49,6 +50,7 @@
     "@types/npm": "^2.0.31",
     "esquery": "^1.4.0",
     "fastify": "^3.14.2",
+    "fastify-cors": "^5.2.0",
     "lmify": "^0.3.0",
     "npm": "^7.10.0",
     "ts-morph": "^10.0.2"

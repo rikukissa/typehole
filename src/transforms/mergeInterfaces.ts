@@ -49,7 +49,7 @@ export function mergeInterfaces(source: string) {
       }
       return memo;
     },
-    {}
+    Object.fromEntries(Object.keys(knownInterfaces).map((key) => [key, []]))
   );
 
   const someoneDependingOn = Object.values(dependencies).flat();

@@ -1,16 +1,30 @@
 import * as assert from "assert";
+import { isExpression } from "../../parse/expression";
+import { findTypeholes } from "../../parse/module";
 
-import { insertRecorders } from "../../transforms/insertRecorders";
 import { insertTypes } from "../../transforms/insertTypes";
 import { mergeInterfaces } from "../../transforms/mergeInterfaces";
+import { wrapIntoRecorder } from "../../transforms/wrapIntoRecorder";
 
-test("recorders are placed to expression after AutoDiscover reference", () => {
-  const actual = insertRecorders(`
-import { AutoDiscover } from 'harpake';
-const something: AutoDiscover = {a: 1};`);
+test("generated types are placed between after imports", () => {
+  const actual = insertTypes(
+    0,
+    `
+import typehole from 'typehole';
+const t = typehole();
+const something = t({a: 1});`,
+
+    `interface AutoDiscover {
+  a: number
+}`
+  );
 
   const expected = `
-import { AutoDiscover } from 'harpake';
+import typehole from 'typehole';
+interface AutoDiscover {
+  a: number
+}
+const t = typehole();
 const something: AutoDiscover = t({ a: 1 });`;
 
   assert.strictEqual(actual.trim(), expected.trim());
@@ -18,21 +32,23 @@ const something: AutoDiscover = t({ a: 1 });`;
 
 test("generated types are placed between after imports", () => {
   const actual = insertTypes(
+    0,
     `
-import { AutoDiscover } from 'harpake';
-const something: AutoDiscover = t({a: 1});`,
-    `
-interface AutoDiscover {
+import typehole from 'typehole';
+const t = typehole();
+const something = t({a: 1});`,
+
+    `interface AutoDiscover {
   a: number
-}
-  `
+}`
   );
 
   const expected = `
-import { AutoDiscover } from 'harpake';
+import typehole from 'typehole';
 interface AutoDiscover {
-    a: number;
+  a: number
 }
+const t = typehole();
 const something: AutoDiscover = t({ a: 1 });`;
 
   assert.strictEqual(actual.trim(), expected.trim());
@@ -40,11 +56,12 @@ const something: AutoDiscover = t({ a: 1 });`;
 
 test("generated types are updated in-place", () => {
   const actual = insertTypes(
+    0,
     `
-import { AutoDiscover } from 'harpake';
 interface AutoDiscover {
     a: number;
 }
+const t = typehole();
 const something: AutoDiscover = t({ a: 1 });`,
     `
 interface AutoDiscover {
@@ -55,11 +72,11 @@ interface AutoDiscover {
   );
 
   const expected = `
-import { AutoDiscover } from 'harpake';
 interface AutoDiscover {
-    a: number;
-    b: number;
+  a: number;
+  b: number;
 }
+const t = typehole();
 const something: AutoDiscover = t({ a: 1 });`;
 
   assert.strictEqual(actual.trim(), expected.trim());
@@ -107,6 +124,19 @@ test("merges interfaces", () => {
     `;
 
   assert.strictEqual(actual, expected.trim());
+});
+test("merge simple", () => {
+  const actual = mergeInterfaces(
+    `
+    interface AutoDiscover1 {  foo: number;}
+  `
+  );
+
+  const expected = `interface AutoDiscover1 {
+    foo: number;
+}`;
+
+  assert.strictEqual(actual.trim(), expected.trim());
 });
 test("merges large interfaces", () => {
   const actual = mergeInterfaces(
@@ -163,4 +193,84 @@ test("merges large interfaces", () => {
       `;
 
   assert.strictEqual(actual, expected.trim());
+});
+
+test("finds selected expression", () => {
+  const actual = isExpression(`
+  tsquery.query(
+    ast,
+    "InterfaceDeclaration > Identifier[name='AutoDiscover']"
+  )
+  `);
+
+  assert.deepStrictEqual(actual, true);
+});
+test("finds selected expression", () => {
+  const actual = isExpression(`
+  (await axios.post(
+    "https://www.etuovi.com/api/v2/announcements/search/listpage",
+    params
+  )
+).data
+  `);
+
+  assert.deepStrictEqual(actual, true);
+});
+
+test("returns null on non-expression selection", () => {
+  const actual = isExpression(`
+  if (!siblings.some((s) => markerStarts.includes(s))) {
+    return ts.visitEachChild(node, visitor, ctx);
+  }
+  `);
+  assert.strictEqual(actual, false);
+});
+
+test("returns null on non-expression selection", () => {
+  const actual = isExpression(`
+  .some((s) => markerStarts.includes(s))) {
+    return ts.visitEachChild(node, visitor, ctx);
+  }
+  `);
+  assert.strictEqual(actual, false);
+});
+
+test("wraps expressions into recorder call", () => {
+  const actual = wrapIntoRecorder(
+    0,
+    `
+  tsquery.query(
+    ast,
+    "InterfaceDeclaration > Identifier[name='AutoDiscover']"
+  )
+  `
+  );
+  const expected = `t(tsquery.query(ast, \"InterfaceDeclaration > Identifier[name='AutoDiscover']\"))`;
+  assert.strictEqual(actual, expected);
+});
+
+test("finds all typewholes from source", () => {
+  const actual = findTypeholes(`
+  import { VercelRequest, VercelResponse } from "@vercel/node";
+import axios from "axios";
+import typehole from "typehole";
+
+const t3 = typehole();
+
+export default async (request: VercelRequest, response: VercelResponse) => {
+  const xsrf = await getXSRF();
+  const res = t3(
+    (
+      await axios.post(
+        "https://www.etuovi.com/api/v2/announcements/search/listpage",
+        params
+      )
+    ).data
+  );
+
+  return response.status(200).send(res.announcements);
+};
+
+  `);
+  assert.strictEqual(actual.length, 1);
 });
