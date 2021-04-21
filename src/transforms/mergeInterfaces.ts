@@ -97,6 +97,32 @@ export function mergeInterfaces(source: string) {
         );
       }
     }
+    if (
+      ts.isArrayTypeNode(type) &&
+      ts.isParenthesizedTypeNode(type.elementType)
+    ) {
+      if (ts.isUnionTypeNode(type.elementType.type)) {
+        const types = type.elementType.type.types.filter(
+          (t) => knownInterfaces[t.getText()]
+        );
+
+        return ts.factory.createPropertySignature(
+          undefined,
+          member.name!,
+          member.questionToken,
+          ts.factory.createArrayTypeNode(
+            ts.factory.createParenthesizedType(
+              ts.factory.createUnionTypeNode(
+                types.map((t) =>
+                  interfaceToTypeLiteral(knownInterfaces[t.getText()])
+                )
+              )
+            )
+          )
+        );
+      }
+    }
+
     return member;
   }
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });

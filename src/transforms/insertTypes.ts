@@ -7,21 +7,7 @@ import {
   printAST,
   getNodeStartPosition,
 } from "../parse/module";
-
-function lineCharacterPositionInText(
-  lineChar: ts.LineAndCharacter,
-  text: string
-) {
-  const rows = text.split("\n");
-
-  const allLines = rows.slice(0, lineChar.line + 1);
-  allLines[allLines.length - 1] = allLines[allLines.length - 1].substr(
-    0,
-    lineChar.character
-  );
-
-  return allLines.join("\n").length;
-}
+import { lineCharacterPositionInText } from "../parse/utils";
 
 function insertBefore(source: string, node: ts.Node, insert: string) {
   const start = getNodeStartPosition(node);
@@ -45,52 +31,73 @@ function replace(source: string, node: ts.Node, replacement: string) {
   );
 }
 
-export function insertTypes(id: number, source: string, types: string) {
-  const ast = tsquery.ast(source);
-  const typeId = `AutoDiscover${id === 0 ? "" : id}`;
-  const typeString = types.trim().replace("AutoDiscover", typeId);
+function findDeclarationWithName(name: string, ast: ts.Node): ts.Node | null {
+  const results = tsquery.query(ast, `:declaration Identifier[name="${name}"]`);
 
-  const existingTypeDeclaration = tsquery.query(
-    ast,
-    `InterfaceDeclaration > Identifier[name='${typeId}']`
-  );
-  let newSource = source;
-  if (existingTypeDeclaration.length > 0) {
-    newSource = replace(source, existingTypeDeclaration[0].parent, typeString);
-  } else {
-    const factory = findTypeholeFactories(ast)[id];
-
-    newSource = insertBefore(source, factory, `${typeString}\n`);
-  }
-  const newAST = tsquery.ast(newSource);
-  const holes = findTypeholes(newAST);
-  const hole = holes[id];
-
-  if (!hole) {
-    console.error("Cannot find typehole with an id", id);
-    return newSource;
+  if (results.length === 0) {
+    return null;
   }
 
-  if (ts.isVariableDeclaration(hole.parent)) {
-    const existingType = tsquery.query(
-      hole.parent,
-      `TypeReference > Identifier[name='${typeId}']`
+  return results[0];
+}
+
+export function getTypeAliasForId(id: number, ast: ts.Node) {
+  const hole = findTypeholes(ast)[id];
+
+  let typeReference: string | null = null;
+  if (
+    ts.isCallExpression(hole) &&
+    hole.typeArguments &&
+    hole.typeArguments.length > 0
+  ) {
+    console.log("its a call with generic type");
+    typeReference = hole.typeArguments[0].getText();
+  }
+  const variableDeclaration = getWrappingVariableDeclaration(hole);
+  if (
+    variableDeclaration &&
+    ts.isVariableDeclaration(variableDeclaration) &&
+    variableDeclaration.type
+  ) {
+    console.log("its a variable declaration with type");
+    console.log(variableDeclaration);
+
+    typeReference = variableDeclaration.type.getText();
+  }
+
+  console.log({ typeReference });
+  if (typeReference === null) {
+    console.log("No type reference found");
+    return null;
+  }
+
+  return findDeclarationWithName(typeReference, ast);
+}
+
+export function getWrappingVariableDeclaration(node: ts.Node): ts.Node | null {
+  if (ts.isVariableDeclaration(node)) {
+    return node;
+  }
+  if (node.parent) {
+    return getWrappingVariableDeclaration(node.parent);
+  }
+  return null;
+}
+
+export function insertTypeReference(
+  node: ts.Node,
+  typeId: string,
+  sourceFile: ts.SourceFile
+) {
+  if (ts.isVariableDeclaration(node)) {
+    const newVariableDeclaration = ts.factory.createVariableDeclaration(
+      node.name,
+      node.exclamationToken,
+      ts.factory.createTypeReferenceNode(typeId),
+      node.initializer
     );
-    if (existingType.length === 0) {
-      const newVariableDeclaration = ts.factory.createVariableDeclaration(
-        hole.parent.name,
-        hole.parent.exclamationToken,
-        ts.factory.createTypeReferenceNode(typeId),
-        hole.parent.initializer
-      );
 
-      newSource = replace(
-        newSource,
-        hole.parent,
-        printAST(newVariableDeclaration, newAST.getSourceFile())
-      );
-    }
+    return printAST(newVariableDeclaration, sourceFile);
   }
-
-  return newSource;
+  return null;
 }

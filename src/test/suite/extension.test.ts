@@ -1,86 +1,15 @@
+import { tsquery } from "@phenomnomnominal/tsquery";
 import * as assert from "assert";
+import ts = require("typescript");
 import { isExpression } from "../../parse/expression";
 import { findTypeholes } from "../../parse/module";
+import {
+  getDescendantAtRange,
+  lineCharacterPositionInText,
+} from "../../parse/utils";
 
-import { insertTypes } from "../../transforms/insertTypes";
 import { mergeInterfaces } from "../../transforms/mergeInterfaces";
 import { wrapIntoRecorder } from "../../transforms/wrapIntoRecorder";
-
-test("generated types are placed between after imports", () => {
-  const actual = insertTypes(
-    0,
-    `
-import typehole from 'typehole';
-const t = typehole();
-const something = t({a: 1});`,
-
-    `interface AutoDiscover {
-  a: number
-}`
-  );
-
-  const expected = `
-import typehole from 'typehole';
-interface AutoDiscover {
-  a: number
-}
-const t = typehole();
-const something: AutoDiscover = t({ a: 1 });`;
-
-  assert.strictEqual(actual.trim(), expected.trim());
-});
-
-test("generated types are placed between after imports", () => {
-  const actual = insertTypes(
-    0,
-    `
-import typehole from 'typehole';
-const t = typehole();
-const something = t({a: 1});`,
-
-    `interface AutoDiscover {
-  a: number
-}`
-  );
-
-  const expected = `
-import typehole from 'typehole';
-interface AutoDiscover {
-  a: number
-}
-const t = typehole();
-const something: AutoDiscover = t({ a: 1 });`;
-
-  assert.strictEqual(actual.trim(), expected.trim());
-});
-
-test("generated types are updated in-place", () => {
-  const actual = insertTypes(
-    0,
-    `
-interface AutoDiscover {
-    a: number;
-}
-const t = typehole();
-const something: AutoDiscover = t({ a: 1 });`,
-    `
-interface AutoDiscover {
-  a: number;
-  b: number;
-}
-  `
-  );
-
-  const expected = `
-interface AutoDiscover {
-  a: number;
-  b: number;
-}
-const t = typehole();
-const something: AutoDiscover = t({ a: 1 });`;
-
-  assert.strictEqual(actual.trim(), expected.trim());
-});
 
 test("merges interfaces", () => {
   const actual = mergeInterfaces(
@@ -122,6 +51,38 @@ test("merges interfaces", () => {
     };
 }
     `;
+
+  assert.strictEqual(actual, expected.trim());
+});
+
+test("merges interfaces with type unions", () => {
+  const actual = mergeInterfaces(
+    `
+      interface A {
+        e: (B | C)[]
+      }
+
+      interface B {
+        c: C
+      }
+
+      interface C {
+        d: number
+      }
+  `
+  );
+
+  const expected = `
+  interface A {
+    e: ({
+        c: {
+            d: number;
+        };
+    } | {
+        d: number;
+    })[];
+}
+      `;
 
   assert.strictEqual(actual, expected.trim());
 });
@@ -273,4 +234,96 @@ export default async (request: VercelRequest, response: VercelResponse) => {
 
   `);
   assert.strictEqual(actual.length, 1);
+});
+test("XXX", () => {
+  const source = `import React, { useEffect } from "react";
+import logo from "./logo.svg";
+import "./App.css";
+
+function App() {
+  useEffect(() => {
+    async function fetchVideos() {
+      const res = await fetch("https://www.reddit.com/r/videos.json");
+      const data = await res.json();
+
+      console.log(data);
+    }
+    fetchVideos();
+  }, []);
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.tsx</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+    `.trim();
+  const ast = tsquery.ast(source);
+
+  const actual = getDescendantAtRange(ast.getSourceFile(), [184, 235]);
+  console.log(ts.SyntaxKind[actual.kind]);
+});
+test("XXX", () => {
+  const source = `import React, { useEffect } from "react";
+import logo from "./logo.svg";
+import "./App.css";
+
+function App() {
+  useEffect(() => {
+    async function fetchVideos() {
+      const res = await fetch("https://www.reddit.com/r/videos.json");
+      const data = await res.json();
+
+      console.log(data);
+    }
+    fetchVideos();
+  }, []);
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.tsx</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;`;
+
+  assert.strictEqual(
+    lineCharacterPositionInText(
+      {
+        line: 7,
+        character: 18,
+      },
+      source
+    ),
+    184
+  );
 });
