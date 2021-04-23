@@ -14,20 +14,84 @@ function reduceNodes<T>(
   }, defaultValue);
 }
 
+function unique<T>(value: T, index: number, self: T[]) {
+  return self.indexOf(value) === index;
+}
+
+function isType(
+  node: ts.Node
+): node is ts.TypeAliasDeclaration | ts.InterfaceDeclaration {
+  return ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node);
+}
+
+export type KnownTypeLiteralNode =
+  | ts.KeywordTypeNode
+  | ts.LiteralTypeNode
+  | ts.ArrayTypeNode
+  | ts.TypeQueryNode;
+
+function findCircularDependencies(allDependencies: Record<string, string[]>) {
+  const circular: [string, string][] = [];
+  const entries = Object.entries(allDependencies);
+  for (const [key, deps] of entries) {
+    for (const [key2, deps2] of entries) {
+      if (deps2.includes(key) && deps.includes(key2)) {
+        circular.push([key, key2]);
+      }
+    }
+  }
+  return circular;
+}
+
+export const transformLiteralToTypeLiteralNode = (
+  node: ts.Node
+): KnownTypeLiteralNode | undefined => {
+  if (ts.isIdentifier(node)) {
+    ts.factory.createTypeQueryNode(ts.factory.createIdentifier(node.text));
+  }
+
+  // is arrray what ever
+  if (ts.isArrayTypeNode(node)) {
+    return ts.factory.createArrayTypeNode(node.elementType);
+  }
+
+  if (ts.isNumericLiteral(node)) {
+    return ts.factory.createLiteralTypeNode(
+      ts.factory.createNumericLiteral(node.text)
+    );
+  }
+
+  if (ts.isStringLiteral(node)) {
+    return ts.factory.createLiteralTypeNode(
+      ts.factory.createStringLiteral(node.text)
+    );
+  }
+
+  if (node.kind === ts.SyntaxKind.NullKeyword) {
+    return ts.factory.createLiteralTypeNode(ts.factory.createNull());
+  }
+
+  if (node.kind === ts.SyntaxKind.UndefinedKeyword) {
+    return ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword);
+  }
+
+  return undefined;
+};
+
 export function mergeInterfaces(source: string) {
   const ast = tsquery.ast(source);
   const sourceFile = ast.getSourceFile();
 
   const getParentInterfaceName = (node: ts.Node): ts.Identifier =>
-    ts.isInterfaceDeclaration(node)
-      ? node.name
-      : getParentInterfaceName(node.parent);
+    isType(node) ? node.name : getParentInterfaceName(node.parent);
 
-  const knownInterfaces = reduceNodes<Record<string, ts.InterfaceDeclaration>>(
+  const knownInterfaces = reduceNodes<
+    Record<string, ts.TypeAliasDeclaration | ts.InterfaceDeclaration>
+  >(
     ast.getChildAt(0),
     (memo, node) => {
-      if (ts.isInterfaceDeclaration(node)) {
-        return { ...memo, [node.name.text]: node };
+      if (isType(node)) {
+        return { ...memo, [node.name.getText()]: node };
       }
       return memo;
     },
@@ -38,7 +102,7 @@ export function mergeInterfaces(source: string) {
     ast.getChildAt(0),
     (memo, node) => {
       if (ts.isTypeReferenceNode(node)) {
-        const interfaceName = getParentInterfaceName(node).text;
+        const interfaceName = getParentInterfaceName(node).getText();
 
         return {
           ...memo,
@@ -52,14 +116,27 @@ export function mergeInterfaces(source: string) {
     Object.fromEntries(Object.keys(knownInterfaces).map((key) => [key, []]))
   );
 
+  const needsToBeAtRoot = findCircularDependencies(dependencies).flat();
+
   const someoneDependingOn = Object.values(dependencies).flat();
-  const roots = Object.keys(dependencies).filter(
-    (type) => !someoneDependingOn.includes(type)
-  );
+  const roots = Object.keys(dependencies)
+    .filter((type) => !someoneDependingOn.includes(type))
+    .concat(needsToBeAtRoot)
+    .filter(unique);
 
   function interfaceToTypeLiteral(
-    node: ts.InterfaceDeclaration | ts.TypeLiteralNode
-  ): ts.TypeLiteralNode {
+    node: ts.InterfaceDeclaration | ts.TypeLiteralNode | ts.TypeAliasDeclaration
+  ): ts.TypeLiteralNode | KnownTypeLiteralNode {
+    if (ts.isTypeAliasDeclaration(node)) {
+      if (ts.isTypeLiteralNode(node.type)) {
+        return ts.factory.createTypeLiteralNode(
+          node.type.members.map(expandTypeElement)
+        );
+      } else {
+        return transformLiteralToTypeLiteralNode(node.type)!;
+      }
+    }
+
     return ts.factory.createTypeLiteralNode(
       node.members.map(expandTypeElement)
     );
@@ -67,6 +144,11 @@ export function mergeInterfaces(source: string) {
 
   function expandTypeElement(member: ts.TypeElement) {
     const type = (member as any).type;
+
+    if (roots.includes(type.getText())) {
+      return member;
+    }
+
     if (ts.isTypeReferenceNode(type)) {
       if (knownInterfaces[type.typeName.getText()]) {
         return ts.factory.createPropertySignature(
@@ -86,6 +168,10 @@ export function mergeInterfaces(source: string) {
       );
     }
     if (ts.isArrayTypeNode(type) && ts.isTypeReferenceNode(type.elementType)) {
+      if (roots.includes(type.elementType.getText())) {
+        return member;
+      }
+
       if (knownInterfaces[type.elementType.typeName.getText()]) {
         return ts.factory.createPropertySignature(
           undefined,
@@ -125,10 +211,21 @@ export function mergeInterfaces(source: string) {
 
     return member;
   }
+
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
   const mergedInterfaces = roots
     .map((root) => knownInterfaces[root])
-    .map((node: ts.InterfaceDeclaration) => {
+    .map((node: ts.TypeAliasDeclaration | ts.InterfaceDeclaration) => {
+      if (ts.isTypeAliasDeclaration(node)) {
+        if (ts.isTypeLiteralNode(node.type)) {
+          return ts.factory.createTypeLiteralNode(
+            node.type.members.map(expandTypeElement)
+          );
+        } else {
+          return node;
+        }
+      }
+
       return ts.factory.createInterfaceDeclaration(
         undefined,
         undefined,
