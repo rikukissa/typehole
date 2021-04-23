@@ -31,15 +31,10 @@ const last = (arr: any[]) => arr[arr.length - 1];
 
 const PLACEHOLDER_TYPE = "AutoDiscovered";
 
-function startRenamingPlaceholderType() {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    return;
-  }
-  const document = editor.document;
-  if (!document) {
-    return;
-  }
+function startRenamingPlaceholderType(
+  editor: vscode.TextEditor,
+  document: vscode.TextDocument
+) {
   const fullFile = document.getText();
   const ast = getAST(fullFile);
 
@@ -67,6 +62,34 @@ const getEditorRange = (node: ts.Node) => {
   );
 };
 
+function insertTypeholeImport(
+  ast: ts.Node,
+  editBuilder: vscode.TextEditorEdit
+) {
+  const lastImport = findLastImport(ast);
+  const position = lastImport
+    ? getNodeEndPosition(lastImport)
+    : new vscode.Position(0, 0);
+
+  const existingImport = findTypeHoleImport(ast);
+
+  if (existingImport.length === 0) {
+    editBuilder.insert(
+      new vscode.Position(position.line, position.character),
+      "\n" + getTypeHoleImport() + "\n"
+    );
+  }
+}
+
+function insertRecorderToSelection(
+  id: number,
+  editor: vscode.TextEditor,
+  editBuilder: vscode.TextEditorEdit
+) {
+  const selectedText = editor.document.getText(editor.selection);
+  editBuilder.replace(editor.selection, wrapIntoRecorder(id, selectedText));
+}
+
 export function activate(context: vscode.ExtensionContext) {
   const editor = vscode.window.activeTextEditor!;
   context.subscriptions.push(
@@ -80,81 +103,44 @@ export function activate(context: vscode.ExtensionContext) {
     "extension.typehole.add-a-typehole",
     async () => {
       const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        return;
-      }
-      const document = editor.document;
-      if (!document) {
+      const document = editor?.document;
+      if (!editor || !document) {
         return;
       }
 
       const fullFile = document.getText();
-
       const ast = getAST(fullFile);
-      const existingImport = findTypeHoleImport(ast);
-      const lastImport = findLastImport(ast);
-
       const id = findTypeholes(ast).length;
 
-      const position = lastImport
-        ? getNodeEndPosition(lastImport)
-        : new vscode.Position(0, 0);
-
       await editor.edit((editBuilder) => {
-        /* Import typehole if not already imported */
-        if (existingImport.length === 0) {
-          editBuilder.insert(
-            new vscode.Position(position.line, position.character),
-            "\n" + getTypeHoleImport() + "\n"
-          );
-        }
-
-        /* Wrap recorder around selection */
-        const selectedText = editor.document.getText(editor.selection);
-        editBuilder.replace(
-          editor.selection,
-          wrapIntoRecorder(id, selectedText)
-        );
+        insertTypeholeImport(ast, editBuilder);
+        insertRecorderToSelection(id, editor, editBuilder);
       });
 
       const fileWithImportAndRecorder = document.getText();
 
-      const newAST = getAST(fileWithImportAndRecorder);
+      const updatedAST = getAST(fileWithImportAndRecorder);
 
-      const newTypeHole = last(findTypeholes(newAST));
+      const newlyCreatedTypeHole = last(findTypeholes(updatedAST));
 
-      const selectedNode = newTypeHole;
-
-      const variableDeclaration = getWrappingVariableDeclaration(selectedNode);
+      const variableDeclaration = getWrappingVariableDeclaration(
+        newlyCreatedTypeHole
+      );
 
       await editor.edit((editBuilder) => {
         if (variableDeclaration) {
-          const variableDeclationWithNewType = insertTypeReference(
+          insertTypeToVariableDeclaration(
             variableDeclaration,
-            PLACEHOLDER_TYPE,
-            newAST
+            updatedAST,
+            editBuilder
           );
-          const start = getNodeStartPosition(variableDeclaration);
-          const end = getNodeEndPosition(variableDeclaration);
-          if (variableDeclationWithNewType) {
-            editBuilder.replace(
-              new vscode.Range(
-                new vscode.Position(start.line, start.character),
-                new vscode.Position(end.line, end.character)
-              ),
-              variableDeclationWithNewType
-            );
-          }
         }
 
         /* Add a placeholder type */
-        editBuilder.insert(
-          getEditorRange(getParentOnRootLevel(newTypeHole)).start,
-          `type ${PLACEHOLDER_TYPE} = any\n\n`
-        );
+        insertAPlaceholderType(editBuilder, newlyCreatedTypeHole);
       });
 
-      startRenamingPlaceholderType();
+      startRenamingPlaceholderType(editor, document);
     }
   );
 
@@ -190,6 +176,39 @@ export function activate(context: vscode.ExtensionContext) {
       );
     });
   });
+}
+
+function insertAPlaceholderType(
+  editBuilder: vscode.TextEditorEdit,
+  newTypeHole: any
+) {
+  editBuilder.insert(
+    getEditorRange(getParentOnRootLevel(newTypeHole)).start,
+    `type ${PLACEHOLDER_TYPE} = any\n\n`
+  );
+}
+
+function insertTypeToVariableDeclaration(
+  variableDeclaration: ts.Node,
+  ast: ts.SourceFile,
+  editBuilder: vscode.TextEditorEdit
+) {
+  const variableDeclationWithNewType = insertTypeReference(
+    variableDeclaration,
+    PLACEHOLDER_TYPE,
+    ast
+  );
+  const start = getNodeStartPosition(variableDeclaration);
+  const end = getNodeEndPosition(variableDeclaration);
+  if (variableDeclationWithNewType) {
+    editBuilder.replace(
+      new vscode.Range(
+        new vscode.Position(start.line, start.character),
+        new vscode.Position(end.line, end.character)
+      ),
+      variableDeclationWithNewType
+    );
+  }
 }
 
 function startListenerServer(
