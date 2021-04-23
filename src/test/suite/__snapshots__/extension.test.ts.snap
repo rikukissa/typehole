@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Finds all dependency type nodes from an AST 1`] = `
+Array [
+  "type Something = {
+    a: B;
+  };",
+  "type B = {
+    moi: C | D;
+  };",
+  "type C = 2;",
+  "type D = 3;",
+]
+`;

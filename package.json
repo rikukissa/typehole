@@ -26,9 +26,8 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "jest"
   },
   "devDependencies": {
     "@types/glob": "^7.1.3",
@@ -40,7 +39,7 @@
     "eslint": "^7.19.0",
     "glob": "^7.1.6",
     "jest": "^26.6.3",
-    "mocha": "^8.2.1",
+    "ts-jest": "^26.5.5",
     "typescript": "^4.1.3",
     "vscode-test": "^1.5.0"
   },
