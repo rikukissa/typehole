@@ -58,7 +58,7 @@ test("wraps expressions into recorder call", () => {
   )
   `
   );
-  const expected = `t(tsquery.query(ast, \"InterfaceDeclaration > Identifier[name='AutoDiscover']\"))`;
+  const expected = `typehole.t(tsquery.query(ast, \"InterfaceDeclaration > Identifier[name='AutoDiscover']\"))`;
   assert.strictEqual(actual, expected);
 });
 

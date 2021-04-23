@@ -49,24 +49,22 @@ export function printAST(ast: ts.Node, sourceFile?: ts.SourceFile) {
   );
 }
 
-export function findTypeholes(ast: ts.Node | string) {
-  const holenames = tsquery
-    .query(ast, 'CallExpression > Identifier[name="typehole"]')
-    .map((identifier) => identifier.parent.parent as ts.VariableDeclaration)
-    .map((decl) => decl.name.getText());
-
-  const holes = holenames.flatMap((name) =>
-    tsquery.query(ast, `CallExpression > Identifier[name="${name}"]`)
+export function findTypeholes(ast: ts.Node | string): ts.CallExpression[] {
+  const holes = tsquery.query(
+    ast,
+    `PropertyAccessExpression > Identifier[name="typehole"]`
   );
 
-  return holes.map((n) => n.parent);
-}
-export function findTypeholeFactories(ast: ts.Node | string) {
-  return tsquery
-    .query(ast, 'CallExpression > Identifier[name="typehole"]')
-    .map((n) => n.parent.parent.parent);
+  return holes.map((n) => n.parent.parent).filter(ts.isCallExpression);
 }
 
 export function getAST(source: string) {
   return tsquery.ast(source);
+}
+
+export function getParentOnRootLevel(node: ts.Node): ts.Node {
+  if (ts.isSourceFile(node.parent)) {
+    return node;
+  }
+  return getParentOnRootLevel(node.parent);
 }

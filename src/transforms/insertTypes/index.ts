@@ -1,9 +1,12 @@
 import * as ts from "typescript";
 import { tsquery } from "@phenomnomnominal/tsquery";
-import { findTypeholes, printAST } from "../parse/module";
+import { findTypeholes, printAST } from "../../parse/module";
 
-function findDeclarationsWithName(name: string, ast: ts.Node): ts.Node[] {
-  return tsquery.query(ast, `:declaration > Identifier[name="${name}"]`);
+function findDeclarationsWithName(name: string, ast: ts.Node) {
+  return tsquery.query<ts.InterfaceDeclaration | ts.TypeAliasDeclaration>(
+    ast,
+    `:declaration > Identifier[name="${name}"]`
+  );
 }
 
 function findDeclarationWithName(name: string, ast: ts.Node): ts.Node | null {
@@ -14,13 +17,21 @@ function findDeclarationWithName(name: string, ast: ts.Node): ts.Node | null {
   return results[0];
 }
 
-export function getAllDependencyTypeDeclarations(node: ts.Node): ts.Node[] {
+export function getAllDependencyTypeDeclarations(
+  node: ts.Node,
+  found: ts.Node[] = []
+): Array<ts.InterfaceDeclaration | ts.TypeAliasDeclaration> {
+  // To prevent recursion in circular types
+  if (found.includes(node)) {
+    return [];
+  }
+
   if (ts.isTypeAliasDeclaration(node)) {
     if (ts.isTypeLiteralNode(node.type)) {
       return [
         node,
         ...node.type.members.flatMap((m: any) =>
-          getAllDependencyTypeDeclarations(m.type)
+          getAllDependencyTypeDeclarations(m.type, [...found, node])
         ),
       ];
     } else {
@@ -32,14 +43,14 @@ export function getAllDependencyTypeDeclarations(node: ts.Node): ts.Node[] {
     return [
       node,
       ...node.members.flatMap((m: any) =>
-        getAllDependencyTypeDeclarations(m.type)
+        getAllDependencyTypeDeclarations(m.type, [...found, node])
       ),
     ];
   }
 
   if (ts.isTypeLiteralNode(node)) {
     return node.members.flatMap((m: any) =>
-      getAllDependencyTypeDeclarations(m.type)
+      getAllDependencyTypeDeclarations(m.type, [...found])
     );
   }
 
@@ -51,12 +62,12 @@ export function getAllDependencyTypeDeclarations(node: ts.Node): ts.Node[] {
 
     return [
       ...declarations.flatMap((n) =>
-        getAllDependencyTypeDeclarations(n.parent)
+        getAllDependencyTypeDeclarations(n.parent, [...found])
       ),
     ];
   }
   if (ts.isArrayTypeNode(node) && ts.isTypeReferenceNode(node.elementType)) {
-    return getAllDependencyTypeDeclarations(node.elementType);
+    return getAllDependencyTypeDeclarations(node.elementType, [...found]);
   }
 
   if (ts.isUnionTypeNode(node)) {
@@ -68,7 +79,7 @@ export function getAllDependencyTypeDeclarations(node: ts.Node): ts.Node[] {
 
       return [
         ...declarations.flatMap((n) =>
-          getAllDependencyTypeDeclarations(n.parent)
+          getAllDependencyTypeDeclarations(n.parent, [...found])
         ),
       ];
     });
@@ -86,10 +97,18 @@ export function getAllDependencyTypeDeclarations(node: ts.Node): ts.Node[] {
   return [];
 }
 
-export function getTypeAliasForId(id: number, ast: ts.Node) {
+export function getTypeAliasForId(id: string, ast: ts.Node) {
   const holes = findTypeholes(ast);
 
-  const hole = holes[id];
+  const hole = holes.find(
+    (h) =>
+      ts.isPropertyAccessExpression(h.expression) &&
+      h.expression.name.getText() === id
+  );
+
+  if (!hole) {
+    return;
+  }
 
   let typeReference: string | null = null;
   if (

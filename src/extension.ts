@@ -16,10 +16,9 @@ import {
   getNodeEndPosition,
   getTypeHoleImport,
   findLastImport,
-  getTypeHoleFactoryCall,
   findTypeholes,
-  findTypeholeFactories,
   getNodeStartPosition,
+  getParentOnRootLevel,
 } from "./parse/module";
 import * as ts from "typescript";
 
@@ -116,30 +115,12 @@ export function activate(context: vscode.ExtensionContext) {
           editor.selection,
           wrapIntoRecorder(id, selectedText)
         );
-
-        /* Create recorder from factory */
-        const factories = findTypeholeFactories(ast);
-
-        const factoryCallPosition =
-          factories.length > 0
-            ? getNodeEndPosition(factories[factories.length - 1].parent)
-            : lastImport
-            ? getNodeEndPosition(lastImport)
-            : new vscode.Position(0, 0);
-
-        editBuilder.insert(
-          new vscode.Position(
-            factoryCallPosition.line,
-            factoryCallPosition.character
-          ),
-          "\n" + getTypeHoleFactoryCall(id) + "\n"
-        );
       });
 
       const fileWithImportAndRecorder = document.getText();
 
       const newAST = getAST(fileWithImportAndRecorder);
-      const newTypeHoleFactory = last(findTypeholeFactories(newAST));
+
       const newTypeHole = last(findTypeholes(newAST));
 
       const selectedNode = newTypeHole;
@@ -168,8 +149,8 @@ export function activate(context: vscode.ExtensionContext) {
 
         /* Add a placeholder type */
         editBuilder.insert(
-          getEditorRange(newTypeHoleFactory).end,
-          `\ntype ${PLACEHOLDER_TYPE} = any\n`
+          getEditorRange(getParentOnRootLevel(newTypeHole)).start,
+          `type ${PLACEHOLDER_TYPE} = any\n\n`
         );
       });
 
@@ -177,16 +158,22 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  startListenerServer((id: number, types: string) => {
+  startListenerServer((id: string, types: string) => {
     const ast = tsquery.ast(editor.document.getText());
     const typeAliasNode = getTypeAliasForId(id, ast);
     if (!typeAliasNode) {
       return;
     }
+    const typeName = typeAliasNode.getText();
     // Array is placed by the runtime library so all samples affect the outcome
-    const typesWithoutArrayRoot = types
-      .replace("type IRootObject = IRootObjectItem[];", "")
-      .replace("IRootObjectItem", typeAliasNode.getText());
+    const isSimpleType = !types.includes(
+      "type IRootObject = IRootObjectItem[];"
+    );
+    const typesWithoutArrayRoot = isSimpleType
+      ? types.replace("IRootObject", typeName).replace("[]", "")
+      : types
+          .replace("type IRootObject = IRootObjectItem[];", "")
+          .replace("IRootObjectItem", typeName);
 
     const existingDeclarations = getAllDependencyTypeDeclarations(
       typeAliasNode.parent
@@ -206,7 +193,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function startListenerServer(
-  onTypeExtracted: (id: number, types: string) => void
+  onTypeExtracted: (id: string, types: string) => void
 ) {
   fastify.post("/type", async (request, reply) => {
     const body = request.body as any;
@@ -231,26 +218,7 @@ export function deactivate() {
   fastify.close();
 }
 
-function replaceCurrentEditorContent(te: vscode.TextEditor, result: string) {
-  return te.edit((editBuilder) => {
-    try {
-      editBuilder.replace(
-        new vscode.Range(
-          new vscode.Position(0, 0),
-          new vscode.Position(
-            te.document.lineCount - 1,
-            te.document.lineAt(te.document.lineCount - 1).range.end.character
-          )
-        ),
-        result
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  });
-}
-
-export class TypeHoler implements vscode.CodeActionProvider {
+class TypeHoler implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [
     vscode.CodeActionKind.QuickFix,
   ];

@@ -7,7 +7,7 @@ export function wrapIntoRecorder(id: number, expressionCode: string) {
   const expression = ast.getChildAt(0).getChildAt(0).getChildAt(0);
 
   const wrapped = ts.factory.createCallExpression(
-    ts.factory.createIdentifier(`t${id === 0 ? "" : id}`),
+    ts.factory.createIdentifier(`typehole.t${id === 0 ? "" : id}`),
     undefined,
     [expression as ts.Expression]
   );
