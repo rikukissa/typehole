@@ -167,6 +167,7 @@ export function mergeInterfaces(source: string) {
         interfaceToTypeLiteral(type)
       );
     }
+
     if (ts.isArrayTypeNode(type) && ts.isTypeReferenceNode(type.elementType)) {
       if (roots.includes(type.elementType.getText())) {
         return member;
@@ -177,8 +178,10 @@ export function mergeInterfaces(source: string) {
           undefined,
           member.name!,
           member.questionToken,
-          interfaceToTypeLiteral(
-            knownInterfaces[type.elementType.typeName.getText()]
+          ts.factory.createArrayTypeNode(
+            interfaceToTypeLiteral(
+              knownInterfaces[type.elementType.typeName.getText()]
+            )
           )
         );
       }

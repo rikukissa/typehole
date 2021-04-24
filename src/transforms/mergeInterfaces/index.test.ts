@@ -343,3 +343,20 @@ test("leaves interfaces intact if theres nothing to merge", () => {
 
   assert.strictEqual(actual.trim(), expected.trim());
 });
+
+test("handles array types correctly", () => {
+  const actual = mergeInterfaces(
+    `
+  interface IRootObject {
+    total_currencies: ITotalCurrenciesItem[];
+
+  }
+  interface ITotalCurrenciesItem {
+      currency: string;
+      amount: number;
+  }
+  `
+  );
+
+  expect(actual).toMatchSnapshot();
+});

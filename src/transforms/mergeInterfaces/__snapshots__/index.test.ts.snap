@@ -1,5 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`handles array types correctly 1`] = `
+"interface IRootObject {
+    total_currencies: {
+        currency: string;
+        amount: number;
+    }[];
+}"
+`;
+
 exports[`merges complex interfaces 1`] = `
 "interface IRootObjectItem {
     kind: string;
@@ -125,10 +134,10 @@ interface IData {
                 url: string;
                 width: number;
                 height: number;
-            };
+            }[];
             variants: {};
             id: string;
-        };
+        }[];
         enabled: boolean;
     };
     all_awardings?: {
@@ -148,7 +157,7 @@ interface IData {
             url: string;
             width: number;
             height: number;
-        };
+        }[];
         icon_width: number;
         static_icon_width: number;
         start_date: null;
@@ -164,13 +173,13 @@ interface IData {
             url: string;
             width: number;
             height: number;
-        };
+        }[];
         icon_format: string | null;
         icon_height: number;
         penny_price: null | number;
         award_type: string;
         static_icon_url: string;
-    };
+    }[];
     awarders?: any[];
     media_only?: boolean;
     link_flair_template_id?: string;
