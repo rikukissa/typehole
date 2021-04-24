@@ -52,11 +52,9 @@ test("finds all typewholes from source", () => {
 import axios from "axios";
 import typehole from "typehole";
 
-const t3 = typehole();
-
 export default async (request: VercelRequest, response: VercelResponse) => {
   const xsrf = await getXSRF();
-  const res = t3(
+  const res = typehole.t(
     (
       await axios.post(
         "https://www.etuovi.com/api/v2/announcements/search/listpage",
