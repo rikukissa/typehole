@@ -1,6 +1,6 @@
 {
-  "name": "type-sampler",
-  "displayName": "type-sampler",
+  "name": "typehole",
+  "displayName": "typehole",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -17,7 +17,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "type-sampler.helloWorld",
+        "command": "typehole.add-a-typehole",
         "title": "Replace auto-discovered types"
       }
     ]

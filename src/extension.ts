@@ -136,58 +136,55 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  vscode.commands.registerCommand(
-    "extension.typehole.add-a-typehole",
-    async () => {
-      const editor = vscode.window.activeTextEditor;
-      const document = editor?.document;
-      if (!editor || !document) {
-        return;
+  vscode.commands.registerCommand("typehole.add-a-typehole", async () => {
+    const editor = vscode.window.activeTextEditor;
+    const document = editor?.document;
+    if (!editor || !document) {
+      return;
+    }
+
+    const fullFile = document.getText();
+    const ast = getAST(fullFile);
+    const id = findTypeholes(ast).length;
+
+    await editor.edit((editBuilder) => {
+      insertTypeholeImport(ast, editBuilder);
+      insertRecorderToSelection(id, editor, editBuilder);
+    });
+
+    const fileWithImportAndRecorder = document.getText();
+
+    const updatedAST = getAST(fileWithImportAndRecorder);
+
+    const newlyCreatedTypeHole = last(findTypeholes(updatedAST));
+
+    const variableDeclaration = getWrappingVariableDeclaration(
+      newlyCreatedTypeHole
+    );
+
+    const typeName = getPlaceholderTypeName(updatedAST);
+    await editor.edit((editBuilder) => {
+      if (variableDeclaration) {
+        insertTypeToVariableDeclaration(
+          variableDeclaration,
+          updatedAST,
+          editBuilder
+        );
+      } else {
+        insertTypeGenericVariableParameter(
+          newlyCreatedTypeHole,
+          typeName,
+          updatedAST,
+          editBuilder
+        );
       }
 
-      const fullFile = document.getText();
-      const ast = getAST(fullFile);
-      const id = findTypeholes(ast).length;
+      /* Add a placeholder type */
+      insertAPlaceholderType(typeName, editBuilder, newlyCreatedTypeHole);
+    });
 
-      await editor.edit((editBuilder) => {
-        insertTypeholeImport(ast, editBuilder);
-        insertRecorderToSelection(id, editor, editBuilder);
-      });
-
-      const fileWithImportAndRecorder = document.getText();
-
-      const updatedAST = getAST(fileWithImportAndRecorder);
-
-      const newlyCreatedTypeHole = last(findTypeholes(updatedAST));
-
-      const variableDeclaration = getWrappingVariableDeclaration(
-        newlyCreatedTypeHole
-      );
-
-      const typeName = getPlaceholderTypeName(updatedAST);
-      await editor.edit((editBuilder) => {
-        if (variableDeclaration) {
-          insertTypeToVariableDeclaration(
-            variableDeclaration,
-            updatedAST,
-            editBuilder
-          );
-        } else {
-          insertTypeGenericVariableParameter(
-            newlyCreatedTypeHole,
-            typeName,
-            updatedAST,
-            editBuilder
-          );
-        }
-
-        /* Add a placeholder type */
-        insertAPlaceholderType(typeName, editBuilder, newlyCreatedTypeHole);
-      });
-
-      startRenamingPlaceholderType(typeName, editor, document);
-    }
-  );
+    startRenamingPlaceholderType(typeName, editor, document);
+  });
 
   startListenerServer((id: string, types: string) => {
     const ast = getAST(editor.document.getText());
@@ -341,7 +338,7 @@ class TypeHoler implements vscode.CodeActionProvider {
 
     return [
       {
-        command: "extension.typehole.add-a-typehole",
+        command: "typehole.add-a-typehole",
         title: "Add a typehole",
       },
     ];
