@@ -187,6 +187,11 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   startListenerServer((id: string, types: string) => {
+    const editor = vscode.window.activeTextEditor;
+    const document = editor?.document;
+    if (!editor || !document) {
+      return;
+    }
     const ast = getAST(editor.document.getText());
     const typeAliasNode = getTypeAliasForId(id, ast);
     if (!typeAliasNode) {
@@ -198,7 +203,9 @@ export function activate(context: vscode.ExtensionContext) {
       "type IRootObject = IRootObjectItem[];"
     );
     const typesWithoutArrayRoot = isSimpleType
-      ? types.replace("IRootObject", typeName).replace("[]", "")
+      ? types
+          .replace("IRootObject", typeName)
+          .replace("IRootObjectItem[]", "IRootObjectItem")
       : types
           .replace("type IRootObject = IRootObjectItem[];", "")
           .replace("IRootObjectItem", typeName);
