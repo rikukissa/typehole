@@ -255,7 +255,6 @@ function App() {
       const data: Reddit = typehole.t(await res.json());
 
       const a: Numberz = typehole.t1(1 + 1);
-      console.log(a, data);
     }
     fetchVideos();
   }, []);

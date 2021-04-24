@@ -92,8 +92,21 @@ function insertRecorderToSelection(
   editor: vscode.TextEditor,
   editBuilder: vscode.TextEditorEdit
 ) {
-  const selectedText = editor.document.getText(editor.selection);
-  editBuilder.replace(editor.selection, wrapIntoRecorder(id, selectedText));
+  const fullFile = editor.document.getText();
+  const range = editor.selection;
+
+  const startPosition = lineCharacterPositionInText(range.start, fullFile);
+  const endPosition = lineCharacterPositionInText(range.end, fullFile);
+
+  const selectedNode = getDescendantAtRange(getAST(fullFile), [
+    startPosition,
+    endPosition,
+  ]);
+
+  const nodeRange = getEditorRange(selectedNode);
+  const selectedText = editor.document.getText(nodeRange);
+
+  editBuilder.replace(nodeRange, wrapIntoRecorder(id, selectedText));
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -298,11 +311,13 @@ class TypeHoler implements vscode.CodeActionProvider {
       return;
     }
 
-    if (someParentIs(selectedNode, ts.isImportDeclaration)) {
+    if (ts.isJsxText(selectedNode)) {
       return;
     }
 
-    console.log(ts.SyntaxKind[selectedNode.kind]);
+    if (someParentIs(selectedNode, ts.isImportDeclaration)) {
+      return;
+    }
 
     return [
       {
