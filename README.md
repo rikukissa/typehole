@@ -1,6 +1,8 @@
 # Typehole 🕳
 
-Generate TypeScript interfaces for API requests and other unknown types at runtime. This plugin is still very experimental, so please expect and report issues.
+Bring your runtime values an inch closer to your type definitions
+
+Generate TypeScript interfaces for API requests and other unknown types at runtime based on actual values. This plugin is still very experimental, so please expect and report issues.
 
 ## Features
 

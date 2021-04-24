@@ -1,14 +1,12 @@
 import * as vscode from "vscode";
-import f from "fastify";
 
+import { install, setRootDir } from "lmify";
 import {
   getWrappingVariableDeclaration,
   insertTypeReference,
-  getTypeAliasForId,
-  getAllDependencyTypeDeclarations,
   insertGenericTypeParameter,
 } from "./transforms/insertTypes";
-import { mergeInterfaces } from "./transforms/mergeInterfaces";
+
 import { wrapIntoRecorder } from "./transforms/wrapIntoRecorder";
 import {
   getAST,
@@ -19,7 +17,6 @@ import {
   findTypeholes,
   getNodeStartPosition,
   getParentOnRootLevel,
-  someParentIs,
 } from "./parse/module";
 import * as ts from "typescript";
 
@@ -28,9 +25,13 @@ import {
   getDescendantAtRange,
   lineCharacterPositionInText,
 } from "./parse/utils";
-
-const fastify = f({ logger: true });
-fastify.register(require("fastify-cors"));
+import {
+  isServerRunning,
+  startListenerServer,
+  stopListenerServer,
+} from "./listener";
+import { getEditorRange } from "./editor/utils";
+import { TypeHoler } from "./code-action";
 
 const last = <T>(arr: T[]) => arr[arr.length - 1];
 
@@ -77,15 +78,6 @@ function startRenamingPlaceholderType(
     });
 }
 
-const getEditorRange = (node: ts.Node) => {
-  const start = getNodeStartPosition(node);
-  const end = getNodeEndPosition(node);
-  return new vscode.Range(
-    new vscode.Position(start.line, start.character),
-    new vscode.Position(end.line, end.character)
-  );
-};
-
 function insertTypeholeImport(
   ast: ts.Node,
   editBuilder: vscode.TextEditorEdit
@@ -127,8 +119,22 @@ function insertRecorderToSelection(
   editBuilder.replace(nodeRange, wrapIntoRecorder(id, selectedText));
 }
 
+function getProjectPath() {
+  return vscode.workspace.workspaceFolders![0].uri.path;
+}
+
+function isRuntimeInstalled() {
+  try {
+    require.resolve("typehole", {
+      paths: [getProjectPath()],
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 export function activate(context: vscode.ExtensionContext) {
-  const editor = vscode.window.activeTextEditor!;
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
       ["typescript", "typescriptreact"],
@@ -136,11 +142,49 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
+  vscode.commands.registerCommand("typehole.stop-server", async () => {
+    stopListenerServer();
+  });
+
+  vscode.commands.registerCommand("typehole.start-server", async () => {
+    startListenerServer();
+  });
+
   vscode.commands.registerCommand("typehole.add-a-typehole", async () => {
     const editor = vscode.window.activeTextEditor;
     const document = editor?.document;
     if (!editor || !document) {
       return;
+    }
+
+    if (!isRuntimeInstalled()) {
+      vscode.window.showInformationMessage(
+        "Typehole: Installing runtime package..."
+      );
+      try {
+        (setRootDir as any)(getProjectPath());
+        await install(["-D", "typehole", "--no-save"]);
+        vscode.window.showInformationMessage(
+          "Typehole: Runtime package installed"
+        );
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          "Typehole: Failed to install runtime.\nInstall it manually by running npm install typehole"
+        );
+      }
+    }
+
+    if (!isServerRunning()) {
+      try {
+        vscode.window.showInformationMessage("Typehole: Starting server...");
+        await startListenerServer();
+        vscode.window.showInformationMessage("Typehole: Server ready");
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          "Typehole failed to start",
+          error.message
+        );
+      }
     }
 
     const fullFile = document.getText();
@@ -184,46 +228,6 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     startRenamingPlaceholderType(typeName, editor, document);
-  });
-
-  startListenerServer((id: string, types: string) => {
-    const editor = vscode.window.activeTextEditor;
-    const document = editor?.document;
-    if (!editor || !document) {
-      return;
-    }
-    const ast = getAST(editor.document.getText());
-    const typeAliasNode = getTypeAliasForId(id, ast);
-    if (!typeAliasNode) {
-      return;
-    }
-    const typeName = typeAliasNode.getText();
-    // Array is placed by the runtime library so all samples affect the outcome
-    const isSimpleType = !types.includes(
-      "type IRootObject = IRootObjectItem[];"
-    );
-    const typesWithoutArrayRoot = isSimpleType
-      ? types
-          .replace("IRootObject", typeName)
-          .replace("IRootObjectItem[]", "IRootObjectItem")
-      : types
-          .replace("type IRootObject = IRootObjectItem[];", "")
-          .replace("IRootObjectItem", typeName);
-
-    const existingDeclarations = getAllDependencyTypeDeclarations(
-      typeAliasNode.parent
-    );
-
-    return editor.edit((editBuilder) => {
-      existingDeclarations.forEach((node) => {
-        const range = getEditorRange(node);
-        editBuilder.delete(range);
-      });
-      editBuilder.insert(
-        getEditorRange(typeAliasNode.parent).start,
-        mergeInterfaces(typesWithoutArrayRoot)
-      );
-    });
   });
 }
 
@@ -286,68 +290,7 @@ function insertTypeToVariableDeclaration(
   }
 }
 
-function startListenerServer(
-  onTypeExtracted: (id: string, types: string) => void
-) {
-  fastify.post("/type", async (request, reply) => {
-    const body = request.body as any;
-
-    onTypeExtracted(body.id, body.interfaces as string);
-    return {};
-  });
-
-  // Run the server!
-  const start = async () => {
-    try {
-      await fastify.listen(17341);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  start();
-}
-
 // this method is called when your extension is deactivated
 export function deactivate() {
-  fastify.close();
-}
-
-class TypeHoler implements vscode.CodeActionProvider {
-  public static readonly providedCodeActionKinds = [
-    vscode.CodeActionKind.QuickFix,
-  ];
-
-  public provideCodeActions(
-    document: vscode.TextDocument,
-    range: vscode.Range
-  ): vscode.ProviderResult<vscode.Command[]> {
-    const fullFile = document.getText();
-
-    const startPosition = lineCharacterPositionInText(range.start, fullFile);
-    const endPosition = lineCharacterPositionInText(range.end, fullFile);
-
-    const selectedNode = getDescendantAtRange(getAST(fullFile), [
-      startPosition,
-      endPosition,
-    ]);
-
-    if (!selectedNode) {
-      return;
-    }
-
-    if (ts.isJsxText(selectedNode)) {
-      return;
-    }
-
-    if (someParentIs(selectedNode, ts.isImportDeclaration)) {
-      return;
-    }
-
-    return [
-      {
-        command: "typehole.add-a-typehole",
-        title: "Add a typehole",
-      },
-    ];
-  }
+  stopListenerServer();
 }
