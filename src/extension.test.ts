@@ -1,12 +1,10 @@
 import { tsquery } from "@phenomnomnominal/tsquery";
 import * as assert from "assert";
 
-import { isExpression } from "../../parse/expression";
-import { findTypeholes } from "../../parse/module";
+import { isExpression } from "./parse/expression";
+import { findTypeholes, getAST } from "./parse/module";
 
-import { getAllDependencyTypeDeclarations } from "../../transforms/insertTypes";
-
-import { wrapIntoRecorder } from "../../transforms/wrapIntoRecorder";
+import { getAllDependencyTypeDeclarations } from "./transforms/insertTypes";
 
 test("finds selected expression", () => {
   const actual = isExpression(`
@@ -48,20 +46,6 @@ test("returns null on non-expression selection", () => {
   assert.strictEqual(actual, false);
 });
 
-test("wraps expressions into recorder call", () => {
-  const actual = wrapIntoRecorder(
-    0,
-    `
-  tsquery.query(
-    ast,
-    "InterfaceDeclaration > Identifier[name='AutoDiscover']"
-  )
-  `
-  );
-  const expected = `typehole.t(tsquery.query(ast, \"InterfaceDeclaration > Identifier[name='AutoDiscover']\"))`;
-  assert.strictEqual(actual, expected);
-});
-
 test("finds all typewholes from source", () => {
   const actual = findTypeholes(`
   import { VercelRequest, VercelResponse } from "@vercel/node";
@@ -89,7 +73,7 @@ export default async (request: VercelRequest, response: VercelResponse) => {
 });
 
 test("Finds all dependency type nodes from an AST", () => {
-  const ast = tsquery.ast(`type Something = {
+  const ast = getAST(`type Something = {
     a: B;
   };
 

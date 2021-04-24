@@ -6,6 +6,7 @@ import {
   insertTypeReference,
   getTypeAliasForId,
   getAllDependencyTypeDeclarations,
+  insertGenericTypeParameter,
 } from "./transforms/insertTypes";
 import { mergeInterfaces } from "./transforms/mergeInterfaces";
 import { isExpression } from "./parse/expression";
@@ -19,10 +20,15 @@ import {
   findTypeholes,
   getNodeStartPosition,
   getParentOnRootLevel,
+  someParentIs,
 } from "./parse/module";
 import * as ts from "typescript";
 
 import { tsquery } from "@phenomnomnominal/tsquery";
+import {
+  getDescendantAtRange,
+  lineCharacterPositionInText,
+} from "./parse/utils";
 
 const fastify = f({ logger: true });
 fastify.register(require("fastify-cors"));
@@ -134,6 +140,13 @@ export function activate(context: vscode.ExtensionContext) {
             updatedAST,
             editBuilder
           );
+        } else {
+          insertTypeGenericVariableParameter(
+            newlyCreatedTypeHole,
+            PLACEHOLDER_TYPE,
+            updatedAST,
+            editBuilder
+          );
         }
 
         /* Add a placeholder type */
@@ -145,7 +158,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   startListenerServer((id: string, types: string) => {
-    const ast = tsquery.ast(editor.document.getText());
+    const ast = getAST(editor.document.getText());
     const typeAliasNode = getTypeAliasForId(id, ast);
     if (!typeAliasNode) {
       return;
@@ -186,6 +199,31 @@ function insertAPlaceholderType(
     getEditorRange(getParentOnRootLevel(newTypeHole)).start,
     `type ${PLACEHOLDER_TYPE} = any\n\n`
   );
+}
+
+function insertTypeGenericVariableParameter(
+  typehole: ts.Node,
+  typeName: string,
+  ast: ts.SourceFile,
+  editBuilder: vscode.TextEditorEdit
+) {
+  const callExpressionWithGeneric = insertGenericTypeParameter(
+    typehole,
+    typeName,
+    ast
+  );
+
+  const start = getNodeStartPosition(typehole);
+  const end = getNodeEndPosition(typehole);
+  if (callExpressionWithGeneric) {
+    editBuilder.replace(
+      new vscode.Range(
+        new vscode.Position(start.line, start.character),
+        new vscode.Position(end.line, end.character)
+      ),
+      callExpressionWithGeneric
+    );
+  }
 }
 
 function insertTypeToVariableDeclaration(
@@ -246,11 +284,25 @@ class TypeHoler implements vscode.CodeActionProvider {
     document: vscode.TextDocument,
     range: vscode.Range
   ): vscode.ProviderResult<vscode.Command[]> {
-    const selectedText = document.getText(range);
-    const shouldOfferAction = isExpression(selectedText);
-    if (!shouldOfferAction) {
+    const fullFile = document.getText();
+
+    const startPosition = lineCharacterPositionInText(range.start, fullFile);
+    const endPosition = lineCharacterPositionInText(range.end, fullFile);
+
+    const selectedNode = getDescendantAtRange(getAST(fullFile), [
+      startPosition,
+      endPosition,
+    ]);
+
+    if (!selectedNode) {
       return;
     }
+
+    if (someParentIs(selectedNode, ts.isImportDeclaration)) {
+      return;
+    }
+
+    console.log(ts.SyntaxKind[selectedNode.kind]);
 
     return [
       {

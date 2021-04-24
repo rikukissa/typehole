@@ -1,8 +1,9 @@
 import * as ts from "typescript";
-import { tsquery } from "@phenomnomnominal/tsquery";
+
+import { getAST } from "./module";
 
 export function isExpression(text: string) {
-  const ast = tsquery.ast(text);
+  const ast = getAST(text);
   const selectedNodes = ast.getChildAt(0).getChildren();
 
   const onlyExpressionAndEndOfFile =

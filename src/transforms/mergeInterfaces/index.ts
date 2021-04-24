@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { tsquery } from "@phenomnomnominal/tsquery";
+import { getAST } from "../../parse/module";
 
 function reduceNodes<T>(
   node: ts.Node,
@@ -79,7 +79,7 @@ export const transformLiteralToTypeLiteralNode = (
 };
 
 export function mergeInterfaces(source: string) {
-  const ast = tsquery.ast(source);
+  const ast = getAST(source);
   const sourceFile = ast.getSourceFile();
 
   const getParentInterfaceName = (node: ts.Node): ts.Identifier =>

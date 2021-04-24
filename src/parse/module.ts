@@ -59,7 +59,7 @@ export function findTypeholes(ast: ts.Node | string): ts.CallExpression[] {
 }
 
 export function getAST(source: string) {
-  return tsquery.ast(source);
+  return tsquery.ast(source, "file.ts", ts.ScriptKind.TSX);
 }
 
 export function getParentOnRootLevel(node: ts.Node): ts.Node {
@@ -67,4 +67,16 @@ export function getParentOnRootLevel(node: ts.Node): ts.Node {
     return node;
   }
   return getParentOnRootLevel(node.parent);
+}
+export function someParentIs(
+  node: ts.Node,
+  test: (node: ts.Node) => boolean
+): boolean {
+  if (!node.parent) {
+    return false;
+  }
+  if (test(node.parent)) {
+    return true;
+  }
+  return someParentIs(node.parent, test);
 }

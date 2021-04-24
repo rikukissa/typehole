@@ -1,9 +1,9 @@
-import { tsquery } from "@phenomnomnominal/tsquery";
+import { getAST } from "../../parse/module";
 
 import { getAllDependencyTypeDeclarations, getTypeAliasForId } from "./index";
 
 test("finds all dependency type declarations from an ast when given one interface", () => {
-  const ast = tsquery.ast(file);
+  const ast = getAST(file);
   const typeAliasNode = getTypeAliasForId("t", ast)!;
 
   expect(

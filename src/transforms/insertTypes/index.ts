@@ -161,3 +161,24 @@ export function insertTypeReference(
   }
   return null;
 }
+export function insertGenericTypeParameter(
+  node: ts.Node,
+  typeId: string,
+  sourceFile: ts.SourceFile
+) {
+  if (ts.isCallExpression(node)) {
+    const newCallExpression = ts.factory.createCallExpression(
+      node.expression,
+      [
+        ts.factory.createTypeReferenceNode(
+          ts.factory.createIdentifier(typeId),
+          undefined
+        ),
+      ],
+      node.arguments
+    );
+
+    return printAST(newCallExpression, sourceFile);
+  }
+  return null;
+}

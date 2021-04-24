@@ -1,15 +1,46 @@
 import * as ts from "typescript";
-import { tsquery } from "@phenomnomnominal/tsquery";
+
+import { getAST } from "../parse/module";
+
+function nodeToParameterExpression(node: ts.Node): ts.Expression {
+  if (ts.isFunctionDeclaration(node)) {
+    return ts.factory.createFunctionExpression(
+      node.modifiers,
+      node.asteriskToken,
+      node.name,
+      node.typeParameters,
+      node.parameters,
+      node.type,
+      node.body!
+    );
+  }
+
+  if (ts.isExpressionStatement(node)) {
+    return node.expression;
+  }
+  return node as ts.Expression;
+}
 
 export function wrapIntoRecorder(id: number, expressionCode: string) {
-  const ast = tsquery.ast(expressionCode);
+  const ast = getAST(expressionCode);
   const sourceFile = ast.getSourceFile();
-  const expression = ast.getChildAt(0).getChildAt(0).getChildAt(0);
+
+  let rootNode: ts.Node = ast;
+
+  while (
+    ts.isSourceFile(rootNode) ||
+    ts.SyntaxKind[rootNode.kind] === "SyntaxList"
+  ) {
+    rootNode = rootNode.getChildAt(0);
+  }
 
   const wrapped = ts.factory.createCallExpression(
-    ts.factory.createIdentifier(`typehole.t${id === 0 ? "" : id}`),
+    ts.factory.createPropertyAccessExpression(
+      ts.factory.createIdentifier("typehole"),
+      ts.factory.createIdentifier(`t${id === 0 ? "" : id}`)
+    ),
     undefined,
-    [expression as ts.Expression]
+    [nodeToParameterExpression(rootNode)]
   );
 
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
@@ -18,5 +49,6 @@ export function wrapIntoRecorder(id: number, expressionCode: string) {
     wrapped,
     sourceFile
   );
+
   return result;
 }
