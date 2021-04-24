@@ -3,6 +3,7 @@
   "displayName": "typehole",
   "publisher": "rikurouvila",
   "description": "",
+  "repository": "https://github.com/rikukissa/typehole",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.55.0"
