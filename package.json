@@ -17,12 +17,7 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "typehole.add-a-typehole",
-        "title": "Replace auto-discovered types"
-      }
-    ]
+    "commands": []
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
