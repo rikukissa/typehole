@@ -55,7 +55,14 @@ export function findTypeholes(ast: ts.Node | string): ts.CallExpression[] {
     `PropertyAccessExpression > Identifier[name="typehole"]`
   );
 
-  return holes.map((n) => n.parent.parent).filter(ts.isCallExpression);
+  return holes
+    .map((n) => n.parent.parent)
+    .filter(ts.isCallExpression)
+    .sort((a, b) => {
+      const keyA = (a.expression as ts.PropertyAccessExpression).name.getText();
+      const keyB = (b.expression as ts.PropertyAccessExpression).name.getText();
+      return keyA.localeCompare(keyB);
+    });
 }
 
 export function getAST(source: string) {

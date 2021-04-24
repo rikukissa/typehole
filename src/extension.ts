@@ -9,7 +9,6 @@ import {
   insertGenericTypeParameter,
 } from "./transforms/insertTypes";
 import { mergeInterfaces } from "./transforms/mergeInterfaces";
-import { isExpression } from "./parse/expression";
 import { wrapIntoRecorder } from "./transforms/wrapIntoRecorder";
 import {
   getAST,
@@ -33,11 +32,30 @@ import {
 const fastify = f({ logger: true });
 fastify.register(require("fastify-cors"));
 
-const last = (arr: any[]) => arr[arr.length - 1];
+const last = <T>(arr: T[]) => arr[arr.length - 1];
 
-const PLACEHOLDER_TYPE = "AutoDiscovered";
+function getPlaceholderTypeName(document: ts.SourceFile) {
+  let n = 0;
+
+  let results = tsquery.query(
+    document,
+    `TypeAliasDeclaration > Identifier[name="AutoDiscovered"]`
+  );
+
+  while (results.length > 0) {
+    n++;
+
+    results = tsquery.query(
+      document,
+      `TypeAliasDeclaration > Identifier[name="AutoDiscovered${n}"]`
+    );
+  }
+
+  return "AutoDiscovered" + (n === 0 ? "" : n);
+}
 
 function startRenamingPlaceholderType(
+  typeName: string,
   editor: vscode.TextEditor,
   document: vscode.TextDocument
 ) {
@@ -45,7 +63,7 @@ function startRenamingPlaceholderType(
   const ast = getAST(fullFile);
 
   tsquery
-    .query(ast, `TypeAliasDeclaration > Identifier[name="${PLACEHOLDER_TYPE}"]`)
+    .query(ast, `TypeAliasDeclaration > Identifier[name="${typeName}"]`)
     .forEach(async (node) => {
       const start = getNodeStartPosition(node);
       const end = getNodeEndPosition(node);
@@ -146,6 +164,7 @@ export function activate(context: vscode.ExtensionContext) {
         newlyCreatedTypeHole
       );
 
+      const typeName = getPlaceholderTypeName(updatedAST);
       await editor.edit((editBuilder) => {
         if (variableDeclaration) {
           insertTypeToVariableDeclaration(
@@ -156,17 +175,17 @@ export function activate(context: vscode.ExtensionContext) {
         } else {
           insertTypeGenericVariableParameter(
             newlyCreatedTypeHole,
-            PLACEHOLDER_TYPE,
+            typeName,
             updatedAST,
             editBuilder
           );
         }
 
         /* Add a placeholder type */
-        insertAPlaceholderType(editBuilder, newlyCreatedTypeHole);
+        insertAPlaceholderType(typeName, editBuilder, newlyCreatedTypeHole);
       });
 
-      startRenamingPlaceholderType(editor, document);
+      startRenamingPlaceholderType(typeName, editor, document);
     }
   );
 
@@ -205,12 +224,13 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function insertAPlaceholderType(
+  typeName: string,
   editBuilder: vscode.TextEditorEdit,
-  newTypeHole: any
+  newTypeHole: ts.CallExpression
 ) {
   editBuilder.insert(
     getEditorRange(getParentOnRootLevel(newTypeHole)).start,
-    `type ${PLACEHOLDER_TYPE} = any\n\n`
+    `type ${typeName} = any\n\n`
   );
 }
 
@@ -246,7 +266,7 @@ function insertTypeToVariableDeclaration(
 ) {
   const variableDeclationWithNewType = insertTypeReference(
     variableDeclaration,
-    PLACEHOLDER_TYPE,
+    getPlaceholderTypeName(ast),
     ast
   );
   const start = getNodeStartPosition(variableDeclaration);

@@ -1,9 +1,13 @@
-import { tsquery } from "@phenomnomnominal/tsquery";
-import { ScriptKind } from "typescript";
 import { findTypeholes, getAST } from "./module";
 
 test("finds correct amount of typeholes", () => {
-  expect(findTypeholes(getAST(file)).length).toEqual(1);
+  expect(findTypeholes(getAST(file)).length).toEqual(2);
+});
+
+test("returns holes in creation order", () => {
+  expect(
+    findTypeholes(getAST(file)).map((n: any) => n.expression.name.getText())
+  ).toEqual(["t", "t1"]);
 });
 
 const file = `import logo from "./logo.svg";
@@ -14,7 +18,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+        <img src={typehole.t1(logo)} className="App-logo" alt="logo" />
         <p>
           Edit <code>src/App.tsx</code> and save to {typehole.t("reload")}
         </p>
