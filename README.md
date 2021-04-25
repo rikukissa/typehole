@@ -4,11 +4,12 @@ Bring your runtime values an inch closer to your type definitions
 
 Generate TypeScript interfaces for API requests and other unknown types at runtime based on actual values. This plugin is still very experimental, so please expect and report issues.
 
+![file](https://user-images.githubusercontent.com/1206987/115986088-5646a280-a5b7-11eb-841c-90ab6e10198a.gif)
+
 ## Features
 
 - Create interfaces automatically by collecting type samples at runtime
 
-\!\[feature X\]\(images/feature-x.png\)
 
 > Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
