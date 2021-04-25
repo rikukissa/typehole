@@ -2,7 +2,7 @@
 
 Bring your runtime values an inch closer to your type definitions.
 
-Generate TypeScript interfaces for API requests and other unknown types at runtime based on actual values. This plugin is still very experimental, so please expect and report issues.
+Generate TypeScript interfaces for API requests and other unknown types at runtime based on actual values. So kind of like [Quicktype](https://app.quicktype.io/) or [json2ts](http://json2ts.com/), but without having to copy-paste JSON and typescript interfaces around. This plugin is still very experimental, so please expect and report issues.
 
 ![file](https://user-images.githubusercontent.com/1206987/115986088-5646a280-a5b7-11eb-841c-90ab6e10198a.gif)
 
