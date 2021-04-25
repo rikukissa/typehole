@@ -13,6 +13,11 @@ Generate TypeScript interfaces for API requests and other unknown types at runti
 
 > Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
+## Commands
+![image](https://user-images.githubusercontent.com/1206987/115992467-89e4f500-a5d6-11eb-9869-cf765d43ec52.png)
+
+- Start and stop listening for type information coming the runtime
+
 ## Requirements
 
 At this stage, the project you're working on must have [typehole](https://www.npmjs.com/package/typehole) installed as a dependency.
