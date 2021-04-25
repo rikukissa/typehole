@@ -33,6 +33,10 @@ import {
 import { getEditorRange } from "./editor/utils";
 import { TypeHoler } from "./code-action";
 
+const logger = vscode.window.createOutputChannel("Typehole");
+
+const log = (...messages: string[]) => logger.appendLine(messages.join(" "));
+
 const last = <T>(arr: T[]) => arr[arr.length - 1];
 
 function getPlaceholderTypeName(document: ts.SourceFile) {
@@ -125,11 +129,13 @@ function getProjectPath() {
 
 function isRuntimeInstalled() {
   try {
+    log("Searching for runtime library in", getProjectPath());
     require.resolve("typehole", {
       paths: [getProjectPath()],
     });
     return true;
   } catch (error) {
+    log(error.message);
     return false;
   }
 }
