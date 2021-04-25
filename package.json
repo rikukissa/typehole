@@ -2,9 +2,9 @@
   "name": "typehole",
   "displayName": "Typehole",
   "publisher": "rikurouvila",
-  "description": "🧪 Take samples of runtime values and turn them into type definitions automatically",
+  "description": "🧪  Take samples of runtime values and turn them into type definitions automatically",
   "repository": "https://github.com/rikukissa/typehole",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "icon": "images/logo.png",
   "galleryBanner": {
     "color": "#222145",
