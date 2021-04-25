@@ -32,6 +32,9 @@ import {
 } from "./listener";
 import { getEditorRange } from "./editor/utils";
 import { TypeHoler } from "./code-action";
+import { getAvailableId, onFileChanged, onFileDeleted } from "./state";
+
+import { readFile } from "fs";
 
 const logger = vscode.window.createOutputChannel("Typehole");
 
@@ -123,8 +126,11 @@ function insertRecorderToSelection(
   editBuilder.replace(nodeRange, wrapIntoRecorder(id, selectedText));
 }
 
+function getProjectURI() {
+  return vscode.window.activeTextEditor!.document.uri;
+}
 function getProjectPath() {
-  return vscode.workspace.workspaceFolders![0].uri.path;
+  return getProjectURI().path;
 }
 
 function isRuntimeInstalled() {
@@ -140,7 +146,50 @@ function isRuntimeInstalled() {
   }
 }
 
-export function activate(context: vscode.ExtensionContext) {
+function fileChanged(uri: vscode.Uri) {
+  readFile(uri.fsPath, (err, data) => {
+    if (err) {
+      return log(err.message);
+    }
+    onFileChanged(uri.path, data.toString());
+  });
+}
+
+export async function activate(context: vscode.ExtensionContext) {
+  log("Plugin activated");
+  const typescriptFilesInTheProject = new vscode.RelativePattern(
+    vscode.workspace.getWorkspaceFolder(getProjectURI())!,
+    "**/*.{tsx,ts}"
+  );
+
+  /*
+   * Initialize state
+   */
+
+  const existingFiles = await vscode.workspace.findFiles(
+    typescriptFilesInTheProject,
+    null,
+    50
+  );
+  existingFiles.forEach(fileChanged);
+
+  /*
+   * Setup file watchers to enable holes in multile files
+   */
+
+  const watcher = vscode.workspace.createFileSystemWatcher(
+    typescriptFilesInTheProject,
+    false,
+    false,
+    false
+  );
+
+  watcher.onDidChange(fileChanged);
+  watcher.onDidCreate(fileChanged);
+  watcher.onDidDelete((uri) => {
+    onFileDeleted(uri.path);
+  });
+
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
       ["typescript", "typescriptreact"],
@@ -195,7 +244,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const fullFile = document.getText();
     const ast = getAST(fullFile);
-    const id = findTypeholes(ast).length;
+    const id = getAvailableId();
 
     await editor.edit((editBuilder) => {
       insertTypeholeImport(ast, editBuilder);
