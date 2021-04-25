@@ -1,11 +1,10 @@
 import * as ts from "typescript";
 import { tsquery } from "@phenomnomnominal/tsquery";
 
-export function findTypeHoleImport(ast: ts.Node) {
-  return tsquery.query(
-    ast,
-    "ImportDeclaration > StringLiteral[text='typehole']"
-  );
+export function findTypeHoleImports(ast: ts.Node) {
+  return tsquery
+    .query(ast, "ImportDeclaration > StringLiteral[text='typehole']")
+    .map((s) => s.parent);
 }
 export function findLastImport(ast: ts.Node) {
   const imports = tsquery.query(ast, "ImportDeclaration");

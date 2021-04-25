@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { wrapIntoRecorder } from "./transforms/wrapIntoRecorder";
 import {
   getAST,
-  findTypeHoleImport,
+  findTypeHoleImports,
   getNodeEndPosition,
   getTypeHoleImport,
   findLastImport,
@@ -24,6 +24,7 @@ import { getState, onFileChanged, onFileDeleted } from "./state";
 import { readFile } from "fs";
 import { log } from "./logger";
 import { addATypehole } from "./commands/addATypehole";
+import { removeTypeholesFromCurrentFile } from "./commands/removeTypeholesFromCurrentFile";
 
 export const last = <T>(arr: T[]) => arr[arr.length - 1];
 
@@ -79,9 +80,9 @@ export function insertTypeholeImport(
     ? getNodeEndPosition(lastImport)
     : new vscode.Position(0, 0);
 
-  const existingImport = findTypeHoleImport(ast);
+  const existingImports = findTypeHoleImports(ast);
 
-  if (existingImport.length === 0) {
+  if (existingImports.length === 0) {
     editBuilder.insert(
       new vscode.Position(position.line, position.character),
       "\n" + getTypeHoleImport() + "\n"
@@ -170,6 +171,10 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand("typehole.start-server", async () => {
     startListenerServer();
   });
+  vscode.commands.registerCommand(
+    "typehole.remove-from-current-file",
+    removeTypeholesFromCurrentFile
+  );
 
   vscode.commands.registerCommand("typehole.add-a-typehole", addATypehole);
 }
