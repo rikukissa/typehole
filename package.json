@@ -1,8 +1,8 @@
 {
   "name": "typehole",
-  "displayName": "typehole",
+  "displayName": "Typehole",
   "publisher": "rikurouvila",
-  "description": "Bring your runtime values an inch closer to your type definitions",
+  "description": "🧪 Take samples of runtime values and turn them into type definitions automatically",
   "repository": "https://github.com/rikukissa/typehole",
   "version": "0.1.1",
   "icon": "images/logo.png",
