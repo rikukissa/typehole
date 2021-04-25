@@ -24,6 +24,7 @@ import { getState, onFileChanged, onFileDeleted } from "./state";
 import { readFile } from "fs";
 import { log } from "./logger";
 import { addATypehole } from "./commands/addATypehole";
+import { removeTypeholesFromAllFiles } from "./commands/removeTypeholesFromAllFiles";
 import { removeTypeholesFromCurrentFile } from "./commands/removeTypeholesFromCurrentFile";
 
 export const last = <T>(arr: T[]) => arr[arr.length - 1];
@@ -174,6 +175,10 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
     "typehole.remove-from-current-file",
     removeTypeholesFromCurrentFile
+  );
+  vscode.commands.registerCommand(
+    "typehole.remove-from-all-files",
+    removeTypeholesFromAllFiles
   );
 
   vscode.commands.registerCommand("typehole.add-a-typehole", addATypehole);

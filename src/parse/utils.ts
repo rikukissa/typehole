@@ -85,3 +85,7 @@ export function lineCharacterPositionInText(
 
   return allLines.join("\n").length;
 }
+
+export function unique<T>(value: T, index: number, self: T[]) {
+  return self.indexOf(value) === index;
+}

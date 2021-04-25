@@ -7,12 +7,10 @@ import {
   printAST,
 } from "../parse/module";
 
-export async function removeTypeholesFromCurrentFile() {
-  const editor = vscode.window.activeTextEditor;
-  const document = editor?.document;
-  if (!document || !editor) {
-    return;
-  }
+export function removeTypeholesFromFile(
+  editor: vscode.TextEditor,
+  document: vscode.TextDocument
+) {
   const text = document.getText();
 
   const ast = getAST(text);
@@ -31,4 +29,13 @@ export async function removeTypeholesFromCurrentFile() {
       );
     }
   });
+}
+
+export async function removeTypeholesFromCurrentFile() {
+  const editor = vscode.window.activeTextEditor;
+  const document = editor?.document;
+  if (!document || !editor) {
+    return;
+  }
+  return removeTypeholesFromFile(editor, document);
 }

@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { getAST } from "../../parse/module";
+import { unique } from "../../parse/utils";
 
 function reduceNodes<T>(
   node: ts.Node,
@@ -12,10 +13,6 @@ function reduceNodes<T>(
     const newVal = op(memo, child);
     return reduceNodes(child, op, newVal);
   }, defaultValue);
-}
-
-function unique<T>(value: T, index: number, self: T[]) {
-  return self.indexOf(value) === index;
 }
 
 function isType(

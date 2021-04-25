@@ -18,12 +18,15 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:typescript",
-    "onLanguage:typescriptreact"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
+      {
+        "title": "Typehole: Remove all typeholes from all files",
+        "command": "typehole.remove-from-all-files"
+      },
       {
         "title": "Typehole: Remove all typeholes from current file",
         "command": "typehole.remove-from-current-file"
