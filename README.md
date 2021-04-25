@@ -12,9 +12,9 @@ Generate TypeScript interfaces for API requests and other unknown types at runti
 
 ## Commands
 
-![image](https://user-images.githubusercontent.com/1206987/115992467-89e4f500-a5d6-11eb-9869-cf765d43ec52.png)
+![image](./images/commands.png)
 
-- Start and stop listening for type information coming from the runtime
+- Starting and stopping the server manually isn't necessary by default. The server starts once you add your first typehole.
 
 ## Requirements
 

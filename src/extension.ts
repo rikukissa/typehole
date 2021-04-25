@@ -138,8 +138,23 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   await Promise.all(existingFiles.map(fileChanged));
+  const holes = getState().holes;
+  log("Found", holes.length.toString(), "holes in the workspace");
 
-  log("Found", getState().holes.length.toString(), "holes in the workspace");
+  if (holes.length > 0) {
+    try {
+      log("Starting the server");
+      await startListenerServer();
+      vscode.window.showInformationMessage(
+        "Typehole server ready to receive samples."
+      );
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        "Typehole failed to start its server. Make sure you are not running typehole server in multiple VSCode windows and port 17341 is available for listening."
+      );
+      error("Failed to start server", error.message);
+    }
+  }
 
   /*
    * Setup file watchers to enable holes in multile files
