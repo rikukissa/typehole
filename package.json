@@ -4,7 +4,12 @@
   "publisher": "rikurouvila",
   "description": "Bring your runtime values an inch closer to your type definitions",
   "repository": "https://github.com/rikukissa/typehole",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "icon": "images/logo.png",
+  "galleryBanner": {
+    "color": "#222145",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.55.0"
   },
