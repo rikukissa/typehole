@@ -4,7 +4,7 @@
   "publisher": "rikurouvila",
   "description": "Bring your runtime values an inch closer to your type definitions",
   "repository": "https://github.com/rikukissa/typehole",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.55.0"
   },

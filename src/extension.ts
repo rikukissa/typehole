@@ -32,13 +32,15 @@ import {
 } from "./listener";
 import { getEditorRange } from "./editor/utils";
 import { TypeHoler } from "./code-action";
-import { getAvailableId, onFileChanged, onFileDeleted } from "./state";
+import {
+  getAvailableId,
+  getState,
+  onFileChanged,
+  onFileDeleted,
+} from "./state";
 
 import { readFile } from "fs";
-
-const logger = vscode.window.createOutputChannel("Typehole");
-
-const log = (...messages: string[]) => logger.appendLine(messages.join(" "));
+import { log } from "./logger";
 
 const last = <T>(arr: T[]) => arr[arr.length - 1];
 
@@ -147,11 +149,14 @@ function isRuntimeInstalled() {
 }
 
 function fileChanged(uri: vscode.Uri) {
-  readFile(uri.fsPath, (err, data) => {
-    if (err) {
-      return log(err.message);
-    }
-    onFileChanged(uri.path, data.toString());
+  return new Promise<void>((resolve) => {
+    readFile(uri.fsPath, (err, data) => {
+      if (err) {
+        return log(err.message);
+      }
+      onFileChanged(uri.path, data.toString());
+      resolve();
+    });
   });
 }
 
@@ -171,7 +176,10 @@ export async function activate(context: vscode.ExtensionContext) {
     null,
     50
   );
-  existingFiles.forEach(fileChanged);
+
+  await Promise.all(existingFiles.map(fileChanged));
+
+  log("Found", getState().holes.length.toString(), "holes in the workspace");
 
   /*
    * Setup file watchers to enable holes in multile files

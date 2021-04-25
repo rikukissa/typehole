@@ -1,4 +1,5 @@
 import { getId } from "./hole";
+import { log } from "./logger";
 import { findTypeholes, getAST } from "./parse/module";
 
 type TypeHole = { id: number; fileName: string };
@@ -6,6 +7,9 @@ type TypeHole = { id: number; fileName: string };
 let state = { holes: [] as TypeHole[] };
 
 export function getAvailableId() {
+  if (state.holes.length === 0) {
+    return 0;
+  }
   return Math.max(...state.holes.map((h) => h.id)) + 1;
 }
 
@@ -30,6 +34,7 @@ function setState(newState: typeof state): void {
 export function getState() {
   return state;
 }
+
 export function onFileDeleted(fileName: string) {
   getState()
     .holes.filter((hole) => hole.fileName === fileName)
@@ -49,6 +54,7 @@ export function onFileChanged(fileName: string, content: string) {
   holesInDocument.forEach((holeId) => {
     const newHoleWasAdded = !knownIds.includes(holeId);
     if (newHoleWasAdded) {
+      log("Found a new typehole from", fileName);
       createTypehole(holeId, fileName);
     }
   });
@@ -58,4 +64,8 @@ export function onFileChanged(fileName: string, content: string) {
       removeTypehole(holeId);
     }
   });
+}
+
+export function getHole(id: number) {
+  return state.holes.find((hole) => hole.id === id);
 }

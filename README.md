@@ -1,6 +1,6 @@
 # Typehole 🕳
 
-Bring your runtime values an inch closer to your type definitions
+Bring your runtime values an inch closer to your type definitions.
 
 Generate TypeScript interfaces for API requests and other unknown types at runtime based on actual values. This plugin is still very experimental, so please expect and report issues.
 
@@ -10,13 +10,11 @@ Generate TypeScript interfaces for API requests and other unknown types at runti
 
 - Create interfaces automatically by collecting type samples at runtime
 
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
 ## Commands
+
 ![image](https://user-images.githubusercontent.com/1206987/115992467-89e4f500-a5d6-11eb-9869-cf765d43ec52.png)
 
-- Start and stop listening for type information coming the runtime
+- Start and stop listening for type information coming from the runtime
 
 ## Requirements
 
@@ -24,17 +22,17 @@ At this stage, the project you're working on must have [typehole](https://www.np
 
 ## Extension Settings
 
-At this stage there are no configuration options available.
+At this stage, there are no configuration options available.
 
 ## Known Issues
 
-- Holes may only be placed in one file at a time
+- Typehole server cannot be running in 2 VSCode editors at the same time as the server port is hard-coded to 17341
 
 ## Release Notes
 
 ### 0.0.1
 
-Initial release of Typehole
+The initial release of Typehole
 and Z.
 
 ---

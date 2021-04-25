@@ -8,6 +8,9 @@ import { mergeInterfaces } from "./transforms/mergeInterfaces";
 
 import { getAST } from "./parse/module";
 import { getEditorRange } from "./editor/utils";
+import { getHole } from "./state";
+import { clientIdToStateId } from "./hole";
+import { error, log } from "./logger";
 
 const fastify = f({ logger: true });
 fastify.register(require("fastify-cors"));
@@ -43,13 +46,29 @@ export async function stopListenerServer() {
   }
 }
 
-function onTypeExtracted(id: string, types: string) {
-  const editor = vscode.window.activeTextEditor;
-  const document = editor?.document;
-  if (!editor || !document) {
+async function onTypeExtracted(id: string, types: string) {
+  log("Received new types for id", id.toString());
+  const fileWhereTypeholeIs = getHole(clientIdToStateId(id))?.fileName;
+  console.log(fileWhereTypeholeIs);
+  console.log(types);
+
+  if (!fileWhereTypeholeIs) {
+    error("Cannot find a file for typehole id", id);
     return;
   }
-  const ast = getAST(editor.document.getText());
+  let document: null | vscode.TextDocument = null;
+
+  try {
+    document = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(fileWhereTypeholeIs)
+    );
+  } catch (error) {
+    return error("Failed to open document", fileWhereTypeholeIs);
+  }
+
+  const editor = await vscode.window.showTextDocument(document, 1, false);
+
+  const ast = getAST(document.getText());
   const typeAliasNode = getTypeAliasForId(id, ast);
   if (!typeAliasNode) {
     return;
