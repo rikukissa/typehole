@@ -25,6 +25,10 @@
   "contributes": {
     "commands": [
       {
+        "title": "Typehole: Remove all typeholes from current file",
+        "command": "typehole.remove-from-current-file"
+      },
+      {
         "title": "Typehole: Stop server",
         "command": "typehole.stop-server"
       },

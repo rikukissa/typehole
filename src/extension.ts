@@ -1,12 +1,5 @@
 import * as vscode from "vscode";
 
-import { install, setRootDir } from "lmify";
-import {
-  getWrappingVariableDeclaration,
-  insertTypeReference,
-  insertGenericTypeParameter,
-} from "./transforms/insertTypes";
-
 import { wrapIntoRecorder } from "./transforms/wrapIntoRecorder";
 import {
   getAST,
@@ -14,9 +7,7 @@ import {
   getNodeEndPosition,
   getTypeHoleImport,
   findLastImport,
-  findTypeholes,
   getNodeStartPosition,
-  getParentOnRootLevel,
 } from "./parse/module";
 import * as ts from "typescript";
 
@@ -25,26 +16,18 @@ import {
   getDescendantAtRange,
   lineCharacterPositionInText,
 } from "./parse/utils";
-import {
-  isServerRunning,
-  startListenerServer,
-  stopListenerServer,
-} from "./listener";
+import { startListenerServer, stopListenerServer } from "./listener";
 import { getEditorRange } from "./editor/utils";
 import { TypeHoler } from "./code-action";
-import {
-  getAvailableId,
-  getState,
-  onFileChanged,
-  onFileDeleted,
-} from "./state";
+import { getState, onFileChanged, onFileDeleted } from "./state";
 
 import { readFile } from "fs";
 import { log } from "./logger";
+import { addATypehole } from "./commands/addATypehole";
 
-const last = <T>(arr: T[]) => arr[arr.length - 1];
+export const last = <T>(arr: T[]) => arr[arr.length - 1];
 
-function getPlaceholderTypeName(document: ts.SourceFile) {
+export function getPlaceholderTypeName(document: ts.SourceFile) {
   let n = 0;
 
   let results = tsquery.query(
@@ -64,7 +47,7 @@ function getPlaceholderTypeName(document: ts.SourceFile) {
   return "AutoDiscovered" + (n === 0 ? "" : n);
 }
 
-function startRenamingPlaceholderType(
+export function startRenamingPlaceholderType(
   typeName: string,
   editor: vscode.TextEditor,
   document: vscode.TextDocument
@@ -87,7 +70,7 @@ function startRenamingPlaceholderType(
     });
 }
 
-function insertTypeholeImport(
+export function insertTypeholeImport(
   ast: ts.Node,
   editBuilder: vscode.TextEditorEdit
 ) {
@@ -106,7 +89,7 @@ function insertTypeholeImport(
   }
 }
 
-function insertRecorderToSelection(
+export function insertRecorderToSelection(
   id: number,
   editor: vscode.TextEditor,
   editBuilder: vscode.TextEditorEdit
@@ -131,33 +114,8 @@ function insertRecorderToSelection(
 function getProjectURI() {
   return vscode.window.activeTextEditor!.document.uri;
 }
-function getProjectPath() {
+export function getProjectPath() {
   return getProjectURI().path;
-}
-
-function isRuntimeInstalled() {
-  try {
-    log("Searching for runtime library in", getProjectPath());
-    require.resolve("typehole", {
-      paths: [getProjectPath()],
-    });
-    return true;
-  } catch (error) {
-    log(error.message);
-    return false;
-  }
-}
-
-function fileChanged(uri: vscode.Uri) {
-  return new Promise<void>((resolve) => {
-    readFile(uri.fsPath, (err, data) => {
-      if (err) {
-        return log(err.message);
-      }
-      onFileChanged(uri.path, data.toString());
-      resolve();
-    });
-  });
 }
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -213,147 +171,22 @@ export async function activate(context: vscode.ExtensionContext) {
     startListenerServer();
   });
 
-  vscode.commands.registerCommand("typehole.add-a-typehole", async () => {
-    const editor = vscode.window.activeTextEditor;
-    const document = editor?.document;
-    if (!editor || !document) {
-      return;
-    }
-
-    if (!isRuntimeInstalled()) {
-      vscode.window.showInformationMessage(
-        "Typehole: Installing runtime package..."
-      );
-      try {
-        (setRootDir as any)(getProjectPath());
-        await install(["-D", "typehole", "--no-save"]);
-        vscode.window.showInformationMessage(
-          "Typehole: Runtime package installed"
-        );
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          "Typehole: Failed to install runtime.\nInstall it manually by running npm install typehole"
-        );
-      }
-    }
-
-    if (!isServerRunning()) {
-      try {
-        vscode.window.showInformationMessage("Typehole: Starting server...");
-        await startListenerServer();
-        vscode.window.showInformationMessage("Typehole: Server ready");
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          "Typehole failed to start",
-          error.message
-        );
-      }
-    }
-
-    const fullFile = document.getText();
-    const ast = getAST(fullFile);
-    const id = getAvailableId();
-
-    await editor.edit((editBuilder) => {
-      insertTypeholeImport(ast, editBuilder);
-      insertRecorderToSelection(id, editor, editBuilder);
-    });
-
-    const fileWithImportAndRecorder = document.getText();
-
-    const updatedAST = getAST(fileWithImportAndRecorder);
-
-    const newlyCreatedTypeHole = last(findTypeholes(updatedAST));
-
-    const variableDeclaration = getWrappingVariableDeclaration(
-      newlyCreatedTypeHole
-    );
-
-    const typeName = getPlaceholderTypeName(updatedAST);
-    await editor.edit((editBuilder) => {
-      if (variableDeclaration) {
-        insertTypeToVariableDeclaration(
-          variableDeclaration,
-          updatedAST,
-          editBuilder
-        );
-      } else {
-        insertTypeGenericVariableParameter(
-          newlyCreatedTypeHole,
-          typeName,
-          updatedAST,
-          editBuilder
-        );
-      }
-
-      /* Add a placeholder type */
-      insertAPlaceholderType(typeName, editBuilder, newlyCreatedTypeHole);
-    });
-
-    startRenamingPlaceholderType(typeName, editor, document);
-  });
-}
-
-function insertAPlaceholderType(
-  typeName: string,
-  editBuilder: vscode.TextEditorEdit,
-  newTypeHole: ts.CallExpression
-) {
-  editBuilder.insert(
-    getEditorRange(getParentOnRootLevel(newTypeHole)).start,
-    `type ${typeName} = any\n\n`
-  );
-}
-
-function insertTypeGenericVariableParameter(
-  typehole: ts.Node,
-  typeName: string,
-  ast: ts.SourceFile,
-  editBuilder: vscode.TextEditorEdit
-) {
-  const callExpressionWithGeneric = insertGenericTypeParameter(
-    typehole,
-    typeName,
-    ast
-  );
-
-  const start = getNodeStartPosition(typehole);
-  const end = getNodeEndPosition(typehole);
-  if (callExpressionWithGeneric) {
-    editBuilder.replace(
-      new vscode.Range(
-        new vscode.Position(start.line, start.character),
-        new vscode.Position(end.line, end.character)
-      ),
-      callExpressionWithGeneric
-    );
-  }
-}
-
-function insertTypeToVariableDeclaration(
-  variableDeclaration: ts.Node,
-  ast: ts.SourceFile,
-  editBuilder: vscode.TextEditorEdit
-) {
-  const variableDeclationWithNewType = insertTypeReference(
-    variableDeclaration,
-    getPlaceholderTypeName(ast),
-    ast
-  );
-  const start = getNodeStartPosition(variableDeclaration);
-  const end = getNodeEndPosition(variableDeclaration);
-  if (variableDeclationWithNewType) {
-    editBuilder.replace(
-      new vscode.Range(
-        new vscode.Position(start.line, start.character),
-        new vscode.Position(end.line, end.character)
-      ),
-      variableDeclationWithNewType
-    );
-  }
+  vscode.commands.registerCommand("typehole.add-a-typehole", addATypehole);
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {
   stopListenerServer();
+}
+
+function fileChanged(uri: vscode.Uri) {
+  return new Promise<void>((resolve) => {
+    readFile(uri.fsPath, (err, data) => {
+      if (err) {
+        return log(err.message);
+      }
+      onFileChanged(uri.path, data.toString());
+      resolve();
+    });
+  });
 }
