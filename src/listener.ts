@@ -4,13 +4,9 @@ import {
   getTypeAliasForId,
   getAllDependencyTypeDeclarations,
 } from "./transforms/insertTypes";
-import { mergeInterfaces } from "./transforms/mergeInterfaces";
 
 import { getAST } from "./parse/module";
 import { getEditorRange } from "./editor/utils";
-import { getHole } from "./state";
-import { clientIdToStateId } from "./hole";
-import { error, log } from "./logger";
 
 const fastify = f({ logger: true });
 fastify.register(require("fastify-cors"));
@@ -47,28 +43,12 @@ export async function stopListenerServer() {
 }
 
 async function onTypeExtracted(id: string, types: string) {
-  log("Received new types for id", id.toString());
-  const fileWhereTypeholeIs = getHole(clientIdToStateId(id))?.fileName;
-  console.log(fileWhereTypeholeIs);
-  console.log(types);
-
-  if (!fileWhereTypeholeIs) {
-    error("Cannot find a file for typehole id", id);
+  const editor = vscode.window.activeTextEditor;
+  const document = editor?.document;
+  if (!editor || !document) {
     return;
   }
-  let document: null | vscode.TextDocument = null;
-
-  try {
-    document = await vscode.workspace.openTextDocument(
-      vscode.Uri.file(fileWhereTypeholeIs)
-    );
-  } catch (error) {
-    return error("Failed to open document", fileWhereTypeholeIs);
-  }
-
-  const editor = await vscode.window.showTextDocument(document, 1, false);
-
-  const ast = getAST(document.getText());
+  const ast = getAST(editor.document.getText());
   const typeAliasNode = getTypeAliasForId(id, ast);
   if (!typeAliasNode) {
     return;
@@ -88,14 +68,17 @@ async function onTypeExtracted(id: string, types: string) {
     typeAliasNode.parent
   );
 
-  return editor.edit((editBuilder) => {
+  await editor.edit((editBuilder) => {
     existingDeclarations.forEach((node) => {
       const range = getEditorRange(node);
       editBuilder.delete(range);
     });
+  });
+
+  await editor.edit((editBuilder) => {
     editBuilder.insert(
       getEditorRange(typeAliasNode.parent).start,
-      mergeInterfaces(typesWithoutArrayRoot)
+      typesWithoutArrayRoot
     );
   });
 }

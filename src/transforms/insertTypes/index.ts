@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import { tsquery } from "@phenomnomnominal/tsquery";
 import { findTypeholes, printAST } from "../../parse/module";
+import { unique } from "../../parse/utils";
 
 function findDeclarationsWithName(name: string, ast: ts.Node) {
   return tsquery.query<ts.InterfaceDeclaration | ts.TypeAliasDeclaration>(
@@ -16,8 +17,13 @@ function findDeclarationWithName(name: string, ast: ts.Node): ts.Node | null {
   }
   return results[0];
 }
-
 export function getAllDependencyTypeDeclarations(
+  node: ts.Node
+): Array<ts.InterfaceDeclaration | ts.TypeAliasDeclaration> {
+  return findAllDependencyTypeDeclarations(node).filter(unique);
+}
+
+function findAllDependencyTypeDeclarations(
   node: ts.Node,
   found: ts.Node[] = []
 ): Array<ts.InterfaceDeclaration | ts.TypeAliasDeclaration> {
@@ -31,7 +37,7 @@ export function getAllDependencyTypeDeclarations(
       return [
         node,
         ...node.type.members.flatMap((m: any) =>
-          getAllDependencyTypeDeclarations(m.type, [...found, node])
+          findAllDependencyTypeDeclarations(m.type, [...found, node])
         ),
       ];
     } else {
@@ -43,14 +49,14 @@ export function getAllDependencyTypeDeclarations(
     return [
       node,
       ...node.members.flatMap((m: any) =>
-        getAllDependencyTypeDeclarations(m.type, [...found, node])
+        findAllDependencyTypeDeclarations(m.type, [...found, node])
       ),
     ];
   }
 
   if (ts.isTypeLiteralNode(node)) {
     return node.members.flatMap((m: any) =>
-      getAllDependencyTypeDeclarations(m.type, [...found])
+      findAllDependencyTypeDeclarations(m.type, [...found])
     );
   }
 
@@ -62,12 +68,12 @@ export function getAllDependencyTypeDeclarations(
 
     return [
       ...declarations.flatMap((n) =>
-        getAllDependencyTypeDeclarations(n.parent, [...found])
+        findAllDependencyTypeDeclarations(n.parent, [...found])
       ),
     ];
   }
   if (ts.isArrayTypeNode(node) && ts.isTypeReferenceNode(node.elementType)) {
-    return getAllDependencyTypeDeclarations(node.elementType, [...found]);
+    return findAllDependencyTypeDeclarations(node.elementType, [...found]);
   }
 
   if (ts.isUnionTypeNode(node)) {
@@ -79,7 +85,7 @@ export function getAllDependencyTypeDeclarations(
 
       return [
         ...declarations.flatMap((n) =>
-          getAllDependencyTypeDeclarations(n.parent, [...found])
+          findAllDependencyTypeDeclarations(n.parent, [...found])
         ),
       ];
     });
