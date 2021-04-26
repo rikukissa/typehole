@@ -54,15 +54,6 @@ async function onTypeExtracted(id: string, types: string) {
     return;
   }
   const typeName = typeAliasNode.getText();
-  // Array is placed by the runtime library so all samples affect the outcome
-  const isSimpleType = !types.includes("type IRootObject = IRootObjectItem[];");
-  const typesWithoutArrayRoot = isSimpleType
-    ? types
-        .replace("IRootObject", typeName)
-        .replace("IRootObjectItem[]", "IRootObjectItem")
-    : types
-        .replace("type IRootObject = IRootObjectItem[];", "")
-        .replace("IRootObjectItem", typeName);
 
   const existingDeclarations = getAllDependencyTypeDeclarations(
     typeAliasNode.parent
@@ -78,7 +69,7 @@ async function onTypeExtracted(id: string, types: string) {
   await editor.edit((editBuilder) => {
     editBuilder.insert(
       getEditorRange(typeAliasNode.parent).start,
-      typesWithoutArrayRoot
+      types.replace("IRootObject", typeName)
     );
   });
 }
