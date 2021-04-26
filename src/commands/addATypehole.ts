@@ -38,6 +38,7 @@ export async function addATypehole() {
     vscode.window.showInformationMessage(
       "Typehole: Installing runtime package..."
     );
+    log("Detecting package manager from", getProjectPath()!);
     try {
       (setRootDir as any)(getProjectPath());
       await install(["-D", "typehole", "--no-save"]);
@@ -165,9 +166,9 @@ function insertTypeToVariableDeclaration(
 
 function isRuntimeInstalled() {
   try {
-    log("Searching for runtime library in", getProjectPath());
+    log("Searching for runtime library in", getProjectPath()!);
     require.resolve("typehole", {
-      paths: [getProjectPath()],
+      paths: [getProjectPath()!],
     });
     return true;
   } catch (error) {

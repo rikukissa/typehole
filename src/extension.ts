@@ -114,16 +114,19 @@ export function insertRecorderToSelection(
 }
 
 function getProjectURI() {
-  return vscode.window.activeTextEditor!.document.uri;
+  if (!vscode.workspace.workspaceFolders) {
+    return;
+  }
+  return vscode.workspace.workspaceFolders[0].uri;
 }
 export function getProjectPath() {
-  return getProjectURI().path;
+  return getProjectURI()?.path;
 }
 
 export async function activate(context: vscode.ExtensionContext) {
   log("Plugin activated");
   const typescriptFilesInTheProject = new vscode.RelativePattern(
-    vscode.workspace.getWorkspaceFolder(getProjectURI())!,
+    getProjectURI()!,
     "**/*.{tsx,ts}"
   );
 
