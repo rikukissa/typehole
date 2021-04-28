@@ -11,6 +11,9 @@
 			"presentation": {
 				"reveal": "never"
 			},
+			"options": {
+        "cwd": "${workspaceFolder}/packages/extension"
+      },
 			"group": {
 				"kind": "build",
 				"isDefault": true

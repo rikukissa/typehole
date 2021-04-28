@@ -1,10 +1,10 @@
 {
-  "name": "@riku/typehole-extension",
+  "name": "typehole",
   "displayName": "Typehole",
   "publisher": "rikurouvila",
   "description": "🧪  Take samples of runtime values and turn them into type definitions automatically",
   "repository": "https://github.com/rikukissa/typehole",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "icon": "images/logo.png",
   "galleryBanner": {
