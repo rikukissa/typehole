@@ -41,7 +41,10 @@ function findAllDependencyTypeDeclarations(
         ),
       ];
     } else {
-      return [node];
+      return [
+        node,
+        ...findAllDependencyTypeDeclarations(node.type, [...found, node]),
+      ];
     }
   }
 
@@ -125,6 +128,7 @@ export function getTypeAliasForId(id: string, ast: ts.Node) {
     typeReference = hole.typeArguments[0].getText();
   }
   const variableDeclaration = getWrappingVariableDeclaration(hole);
+
   if (
     variableDeclaration &&
     ts.isVariableDeclaration(variableDeclaration) &&
