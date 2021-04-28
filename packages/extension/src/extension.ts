@@ -108,9 +108,8 @@ export function insertRecorderToSelection(
   ]);
 
   const nodeRange = getEditorRange(selectedNode);
-  const selectedText = editor.document.getText(nodeRange);
 
-  editBuilder.replace(nodeRange, wrapIntoRecorder(id, selectedText));
+  editBuilder.replace(nodeRange, wrapIntoRecorder(id, selectedNode));
 }
 
 function getProjectURI() {

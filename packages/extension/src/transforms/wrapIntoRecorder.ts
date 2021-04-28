@@ -1,7 +1,5 @@
 import * as ts from "typescript";
 
-import { getAST } from "../parse/module";
-
 function nodeToParameterExpression(node: ts.Node): ts.Expression {
   if (ts.isFunctionDeclaration(node)) {
     return ts.factory.createFunctionExpression(
@@ -21,11 +19,10 @@ function nodeToParameterExpression(node: ts.Node): ts.Expression {
   return node as ts.Expression;
 }
 
-export function wrapIntoRecorder(id: number, expressionCode: string) {
-  const ast = getAST(expressionCode);
-  const sourceFile = ast.getSourceFile();
+export function wrapIntoRecorder(id: number, node: ts.Node) {
+  const sourceFile = node.getSourceFile();
 
-  let rootNode: ts.Node = ast;
+  let rootNode: ts.Node = node;
 
   while (
     ts.isSourceFile(rootNode) ||
