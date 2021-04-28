@@ -1,10 +1,11 @@
 {
-  "name": "typehole",
+  "name": "@riku/typehole-extension",
   "displayName": "Typehole",
   "publisher": "rikurouvila",
   "description": "🧪  Take samples of runtime values and turn them into type definitions automatically",
   "repository": "https://github.com/rikukissa/typehole",
   "version": "0.1.5",
+  "private": true,
   "icon": "images/logo.png",
   "galleryBanner": {
     "color": "#222145",
@@ -42,7 +43,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "cp -r ../../README.md ../../images . && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
