@@ -144,6 +144,14 @@ export function getWrappingVariableDeclaration(node: ts.Node): ts.Node | null {
   if (ts.isVariableDeclaration(node)) {
     return node;
   }
+
+  if (ts.isArrayLiteralExpression(node.parent)) {
+    return null;
+  }
+  if (ts.isObjectLiteralExpression(node.parent)) {
+    return null;
+  }
+
   if (node.parent) {
     return getWrappingVariableDeclaration(node.parent);
   }

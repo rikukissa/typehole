@@ -170,6 +170,9 @@ export async function activate(context: vscode.ExtensionContext) {
     false
   );
 
+  vscode.workspace.onDidChangeTextDocument((event) => {
+    onFileChanged(event.document.uri.path, event.document.getText());
+  });
   watcher.onDidChange(fileChanged);
   watcher.onDidCreate(fileChanged);
   watcher.onDidDelete((uri) => {

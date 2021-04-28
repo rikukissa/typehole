@@ -7,7 +7,7 @@ import {
   printAST,
 } from "../parse/module";
 
-export function removeTypeholesFromFile(
+export async function removeTypeholesFromFile(
   editor: vscode.TextEditor,
   document: vscode.TextDocument
 ) {
@@ -16,19 +16,30 @@ export function removeTypeholesFromFile(
   const ast = getAST(text);
   const typeholes = findTypeholes(ast);
 
-  const importStatement = findTypeHoleImports(ast);
+  const importStatements = findTypeHoleImports(ast);
 
-  editor.edit((editBuilder) => {
-    typeholes.forEach((node) => {
-      editBuilder.replace(getEditorRange(node), printAST(node.arguments[0]));
-    });
+  // Cannot be done in just one editBuilder as hopes might overlap each other
+  // and you'll get Error: Overlapping ranges are not allowed!
 
-    if (importStatement) {
-      importStatement.forEach((statement) =>
+  await editor.edit((editBuilder) => {
+    if (typeholes.length > 0) {
+      editBuilder.replace(
+        getEditorRange(typeholes[0]),
+        printAST(typeholes[0].arguments[0])
+      );
+    }
+
+    // Remove import statement if it was the last one
+    if (typeholes.length === 1) {
+      importStatements.forEach((statement) =>
         editBuilder.delete(getEditorRange(statement))
       );
     }
   });
+
+  if (typeholes.length > 1) {
+    await removeTypeholesFromFile(editor, document);
+  }
 }
 
 export async function removeTypeholesFromCurrentFile() {
