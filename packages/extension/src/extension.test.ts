@@ -1,50 +1,9 @@
 import { tsquery } from "@phenomnomnominal/tsquery";
 import * as assert from "assert";
 
-import { isExpression } from "./parse/expression";
 import { findTypeholes, getAST } from "./parse/module";
 
 import { getAllDependencyTypeDeclarations } from "./transforms/insertTypes";
-
-test("finds selected expression", () => {
-  const actual = isExpression(`
-  tsquery.query(
-    ast,
-    "InterfaceDeclaration > Identifier[name='AutoDiscover']"
-  )
-  `);
-
-  assert.deepStrictEqual(actual, true);
-});
-test("finds selected expression", () => {
-  const actual = isExpression(`
-  (await axios.post(
-    "https://www.etuovi.com/api/v2/announcements/search/listpage",
-    params
-  )
-).data
-  `);
-
-  assert.deepStrictEqual(actual, true);
-});
-
-test("returns null on non-expression selection", () => {
-  const actual = isExpression(`
-  if (!siblings.some((s) => markerStarts.includes(s))) {
-    return ts.visitEachChild(node, visitor, ctx);
-  }
-  `);
-  assert.strictEqual(actual, false);
-});
-
-test("returns null on non-expression selection", () => {
-  const actual = isExpression(`
-  .some((s) => markerStarts.includes(s))) {
-    return ts.visitEachChild(node, visitor, ctx);
-  }
-  `);
-  assert.strictEqual(actual, false);
-});
 
 test("finds all typewholes from source", () => {
   const actual = findTypeholes(`

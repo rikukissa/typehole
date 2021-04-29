@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
-import { getAST, someParentIs } from "./parse/module";
 import * as ts from "typescript";
+import { isValidSelection } from "./parse/expression";
+import { getAST } from "./parse/module";
 import {
   getDescendantAtRange,
   lineCharacterPositionInText,
@@ -24,16 +25,9 @@ export class TypeHoler implements vscode.CodeActionProvider {
       startPosition,
       endPosition,
     ]);
+    console.log(ts.SyntaxKind[selectedNode.kind]);
 
-    if (!selectedNode) {
-      return;
-    }
-
-    if (ts.isJsxText(selectedNode)) {
-      return;
-    }
-
-    if (someParentIs(selectedNode, ts.isImportDeclaration)) {
+    if (!isValidSelection(selectedNode)) {
       return;
     }
 
