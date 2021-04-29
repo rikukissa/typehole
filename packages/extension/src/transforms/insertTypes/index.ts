@@ -23,7 +23,7 @@ export function getAllDependencyTypeDeclarations(
   return findAllDependencyTypeDeclarations(node).filter(unique);
 }
 
-function findAllDependencyTypeDeclarations(
+export function findAllDependencyTypeDeclarations(
   node: ts.Node,
   found: ts.Node[] = []
 ): Array<ts.InterfaceDeclaration | ts.TypeAliasDeclaration> {
@@ -48,6 +48,7 @@ function findAllDependencyTypeDeclarations(
     }
   }
 
+  // interface Bar { a: Foo }
   if (ts.isInterfaceDeclaration(node)) {
     return [
       node,
@@ -57,13 +58,23 @@ function findAllDependencyTypeDeclarations(
     ];
   }
 
+  // { a: Foo }
   if (ts.isTypeLiteralNode(node)) {
     return node.members.flatMap((m: any) =>
       findAllDependencyTypeDeclarations(m.type, [...found])
     );
   }
 
+  // Foo, Array<Foo>
   if (ts.isTypeReferenceNode(node)) {
+    // Array<Foo, Bar>
+    const isArrayWrappedType = node.typeArguments !== undefined;
+    if (isArrayWrappedType) {
+      return node.typeArguments!.flatMap((arg) =>
+        findAllDependencyTypeDeclarations(arg, [...found])
+      );
+    }
+
     const declarations = findDeclarationsWithName(
       node.typeName.getText(),
       node.getSourceFile()
@@ -75,8 +86,16 @@ function findAllDependencyTypeDeclarations(
       ),
     ];
   }
-  if (ts.isArrayTypeNode(node) && ts.isTypeReferenceNode(node.elementType)) {
-    return findAllDependencyTypeDeclarations(node.elementType, [...found]);
+  if (ts.isArrayTypeNode(node)) {
+    if (ts.isTypeReferenceNode(node.elementType)) {
+      return findAllDependencyTypeDeclarations(node.elementType, [...found]);
+    }
+    // (A | B)[]
+    if (ts.isParenthesizedTypeNode(node.elementType)) {
+      return findAllDependencyTypeDeclarations(node.elementType.type, [
+        ...found,
+      ]);
+    }
   }
 
   if (ts.isUnionTypeNode(node)) {
