@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "name": "typehole",
+  "repository": "rikukissa/typehole",
+  "description": "Turn runtime types into static typescript types automatically",
+  "unpkg": "dist/index.min.js",
+  "module": "dist/index.mjs",
+  "main": "dist/index.js",
+  "types": "types/index.d.ts",
+  "license": "MIT",
+  "author": {
+    "name": "Riku Rouvila"
+  },
+  "files": [
+    "dist",
+    "types"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "prepublishOnly": "npm run build",
+    "test": "uvu -r ts-node/register test",
+    "test:watch": "watchlist src test -- npm test"
+  },
+  "keywords": [
+    "TODO",
+    "module",
+    "keywords"
+  ],
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "8.1.0",
+    "@types/node": "^14.14.37",
+    "rollup": "2.21.0",
+    "rollup-plugin-terser": "6.1.0",
+    "rollup-plugin-typescript2": "0.27.1",
+    "ts-node": "8.10.2",
+    "typescript": "3.9.6",
+    "uvu": "0.0.19",
+    "watchlist": "^0.2.3"
+  },
+  "dependencies": {
+    "@types/isomorphic-fetch": "0.0.35",
+    "isomorphic-fetch": "^3.0.0"
+  }
+}

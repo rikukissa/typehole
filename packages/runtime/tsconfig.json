@@ -1,0 +1,31 @@
+{
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "commonjs",
+      "sourceMap": true,
+    },
+    "include": [
+      "test/**/*"
+    ]
+  },
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "esnext",
+    "declaration": true,
+    "esModuleInterop": true,
+    "declarationDir": "types",
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strict": true
+  },
+  "include": [
+    "@types/**/*",
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
