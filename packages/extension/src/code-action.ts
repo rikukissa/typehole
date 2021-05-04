@@ -25,7 +25,6 @@ export class TypeHoler implements vscode.CodeActionProvider {
       startPosition,
       endPosition,
     ]);
-    console.log(ts.SyntaxKind[selectedNode.kind]);
 
     if (!isValidSelection(selectedNode)) {
       return;

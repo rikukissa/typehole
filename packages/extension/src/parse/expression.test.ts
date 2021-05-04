@@ -1,3 +1,4 @@
+import { tsquery } from "@phenomnomnominal/tsquery";
 import * as assert from "assert";
 
 import { isValidSelection } from "./expression";
@@ -41,6 +42,18 @@ test("returns null on non-expression selection", () => {
   `)
   );
   assert.strictEqual(actual, false);
+});
+
+test("it's ok to select specific values", () => {
+  assert.strictEqual(isValidSelection(toNode(`undefined`)), true);
+  assert.strictEqual(isValidSelection(toNode(`1`)), true);
+  assert.strictEqual(isValidSelection(toNode(`true`)), true);
+  assert.strictEqual(
+    isValidSelection(
+      tsquery.query(toNode(`const a = {a: 3}`), "ObjectLiteralExpression")[0]
+    ),
+    true
+  );
 });
 
 test("returns null on non-expression selection", () => {
