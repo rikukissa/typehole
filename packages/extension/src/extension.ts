@@ -32,10 +32,14 @@ export const last = <T>(arr: T[]) => arr[arr.length - 1];
 export function getPlaceholderTypeName(document: ts.SourceFile) {
   let n = 0;
 
-  let results = tsquery.query(
-    document,
-    `TypeAliasDeclaration > Identifier[name="AutoDiscovered"]`
-  );
+  let results = tsquery
+    .query(document, `TypeAliasDeclaration > Identifier[name="AutoDiscovered"]`)
+    .concat(
+      tsquery.query(
+        document,
+        `InterfaceDeclaration > Identifier[name="AutoDiscovered"]`
+      )
+    );
 
   while (results.length > 0) {
     n++;
