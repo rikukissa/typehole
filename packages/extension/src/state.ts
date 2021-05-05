@@ -1,16 +1,77 @@
+import * as EventEmitter from "events";
+import * as vscode from "vscode";
 import { getId } from "./hole";
 import { log } from "./logger";
 import { findTypeholes, getAST } from "./parse/module";
 
+export const events = new EventEmitter();
+
 type TypeHole = { id: number; fileName: string };
 
-let state = { holes: [] as TypeHole[] };
+let state = {
+  warnings: {} as Record<string, vscode.Range[]>,
+  holes: [] as TypeHole[],
+  samples: {} as Record<string, any[]>,
+};
+
+export type State = typeof state;
 
 export function getAvailableId() {
   if (state.holes.length === 0) {
     return 0;
   }
   return Math.max(...state.holes.map((h) => h.id)) + 1;
+}
+
+export function clearWarnings(fileName: string) {
+  const state = getState();
+  setState({ ...state, warnings: { ...state.warnings, [fileName]: [] } });
+}
+
+export function getWarnings(fileName: string) {
+  const state = getState();
+  return state.warnings[fileName] || [];
+}
+
+export function addWarning(fileName: string, range: vscode.Range) {
+  const state = getState();
+  setState({
+    ...state,
+    warnings: {
+      ...state.warnings,
+      [fileName]: getWarnings(fileName).concat(range),
+    },
+  });
+}
+
+export function getSamples(id: number) {
+  return getState().samples[id] || [];
+}
+
+export function addSample(id: number, sample: any) {
+  const currentState = getState();
+  const existing = getSamples(id);
+
+  const newSamples = [sample].concat(existing);
+
+  setState({
+    ...currentState,
+    samples: {
+      ...currentState.samples,
+      [id]: newSamples,
+    },
+  });
+  return newSamples;
+}
+
+function clearSamples(id: number, currentState: typeof state) {
+  return {
+    ...currentState,
+    samples: {
+      ...currentState.samples,
+      [id]: [],
+    },
+  };
 }
 
 function createTypehole(id: number, fileName: string) {
@@ -21,14 +82,17 @@ function createTypehole(id: number, fileName: string) {
 
 function removeTypehole(id: number) {
   const currentState = getState();
-  setState({
-    ...currentState,
-    holes: currentState.holes.filter((h) => h.id !== id),
-  });
+  setState(
+    clearSamples(id, {
+      ...currentState,
+      holes: currentState.holes.filter((h) => h.id !== id),
+    })
+  );
 }
 
 function setState(newState: typeof state): void {
   state = newState;
+  events.emit("change", newState);
 }
 
 export function getState() {

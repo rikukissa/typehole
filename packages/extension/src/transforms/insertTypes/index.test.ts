@@ -86,3 +86,16 @@ test("finds all dependency type declarations from an ast when given one interfac
     findAllDependencyTypeDeclarations(node.parent).map((n) => n.name.getText())
   ).toEqual(["Root", "ArrayItemA", "ArrayItemB"]);
 });
+
+test("finds all dependency type declarations from an ast when there are array types in union", () => {
+  const ast = getAST(`
+    type AutoDiscovered = IRootObjectItem[] | (string | boolean | number)[];
+    interface IRootObjectItem {
+        a?: number;
+    }`);
+
+  const node = tsquery.query(ast, 'Identifier[name="AutoDiscovered"]')[0];
+  expect(
+    findAllDependencyTypeDeclarations(node.parent).map((n) => n.name.getText())
+  ).toEqual(["AutoDiscovered", "IRootObjectItem"]);
+});

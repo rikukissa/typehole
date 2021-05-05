@@ -98,10 +98,11 @@ export function findAllDependencyTypeDeclarations(
     }
   }
 
+  // IRootObjectItem[] | (string | boolean | number)[];
   if (ts.isUnionTypeNode(node)) {
     return node.types.flatMap((t) => {
       const declarations = findDeclarationsWithName(
-        t.getText(),
+        ts.isArrayTypeNode(t) ? t.elementType.getText() : t.getText(),
         t.getSourceFile()
       );
 
@@ -138,34 +139,37 @@ export function getTypeAliasForId(id: string, ast: ts.Node) {
     return;
   }
 
-  let typeReference: string | null = null;
-  if (
+  const holeHasTypeVariable =
     ts.isCallExpression(hole) &&
     hole.typeArguments &&
-    hole.typeArguments.length > 0
-  ) {
-    typeReference = hole.typeArguments[0].getText();
+    hole.typeArguments.length > 0;
+
+  if (holeHasTypeVariable) {
+    const typeReference = hole.typeArguments![0].getText();
+    return findDeclarationWithName(typeReference, ast);
   }
   const variableDeclaration = getWrappingVariableDeclaration(hole);
 
-  if (
+  const holeIsValueInVariableDeclaration =
     variableDeclaration &&
     ts.isVariableDeclaration(variableDeclaration) &&
-    variableDeclaration.type
-  ) {
-    typeReference = variableDeclaration.type.getText();
+    variableDeclaration.type;
+
+  if (holeIsValueInVariableDeclaration) {
+    const typeReference = (variableDeclaration as ts.VariableDeclaration).type!.getText();
+    return findDeclarationWithName(typeReference, ast);
   }
 
-  if (typeReference === null) {
-    return null;
-  }
-
-  return findDeclarationWithName(typeReference, ast);
+  return null;
 }
 
 export function getWrappingVariableDeclaration(node: ts.Node): ts.Node | null {
   if (ts.isVariableDeclaration(node)) {
     return node;
+  }
+
+  if (ts.isSourceFile(node.parent)) {
+    return null;
   }
 
   if (ts.isArrayLiteralExpression(node.parent)) {

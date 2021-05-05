@@ -19,13 +19,14 @@ import {
 import { startListenerServer, stopListenerServer } from "./listener";
 import { getEditorRange } from "./editor/utils";
 import { TypeHoler } from "./code-action";
-import { getState, onFileChanged, onFileDeleted } from "./state";
+import { clearWarnings, getState, onFileChanged, onFileDeleted } from "./state";
 
 import { readFile } from "fs";
 import { log } from "./logger";
 import { addATypehole } from "./commands/addATypehole";
 import { removeTypeholesFromAllFiles } from "./commands/removeTypeholesFromAllFiles";
 import { removeTypeholesFromCurrentFile } from "./commands/removeTypeholesFromCurrentFile";
+import { diagnosticCollection } from "./diagnostics";
 
 export const last = <T>(arr: T[]) => arr[arr.length - 1];
 
@@ -128,6 +129,9 @@ export function getProjectPath() {
 
 export async function activate(context: vscode.ExtensionContext) {
   log("Plugin activated");
+
+  context.subscriptions.push(diagnosticCollection);
+
   const typescriptFilesInTheProject = new vscode.RelativePattern(
     getProjectURI()!,
     "**/*.{tsx,ts}"
@@ -214,6 +218,7 @@ export function deactivate() {
 }
 
 function fileChanged(uri: vscode.Uri) {
+  clearWarnings(uri.path);
   return new Promise<void>((resolve) => {
     readFile(uri.fsPath, (err, data) => {
       if (err) {

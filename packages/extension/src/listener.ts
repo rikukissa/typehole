@@ -4,9 +4,13 @@ import {
   getTypeAliasForId,
   getAllDependencyTypeDeclarations,
 } from "./transforms/insertTypes";
-
-import { getAST } from "./parse/module";
+import * as ts from "typescript";
+import { findTypeholes, getAST } from "./parse/module";
 import { getEditorRange } from "./editor/utils";
+import { error, log } from "./logger";
+
+import { json2ts } from "json-ts";
+import { addWarning } from "./state";
 
 const fastify = f({ logger: true });
 fastify.register(require("fastify-cors"));
@@ -17,17 +21,38 @@ export function isServerRunning() {
 }
 
 export async function startListenerServer() {
+  log("Requesting HTTP server start");
   running = true;
+
   fastify.post("/type", async (request, reply) => {
     const body = request.body as any;
-
     onTypeExtracted(body.id, body.interfaces as string);
-    return {};
+    return reply.code(200).send();
+  });
+
+  fastify.post("/samples", async (request, reply) => {
+    const body = request.body as any;
+    log(body.id, "-", "New sample", JSON.stringify(request.body), "received");
+
+    const typeString = json2ts(JSON.stringify(body.sample));
+
+    onTypeExtracted(body.id, typeString);
+
+    return reply.code(200).send();
+  });
+
+  fastify.post("/unserializable", async (request, reply) => {
+    const body = request.body as any;
+    error("Value in typehole", body.id, "is unserializable");
+    onUnserializable(body.id);
+    return reply.code(200).send();
   });
 
   try {
     await fastify.listen(17341);
+    log("HTTP server started");
   } catch (err) {
+    error("Starting HTTP server failed");
     running = false;
     console.error(err);
     throw err;
@@ -69,7 +94,31 @@ async function onTypeExtracted(id: string, types: string) {
   await editor.edit((editBuilder) => {
     editBuilder.insert(
       getEditorRange(typeAliasNode.parent).start,
-      types.replace("IRootObject", typeName)
+      types.replace("IRootObject", typeName).trim()
     );
   });
+  // TODO We could also only format the types we added
+  await vscode.commands.executeCommand("editor.action.formatDocument");
+}
+
+async function onUnserializable(id: string) {
+  const editor = vscode.window.activeTextEditor;
+  const document = editor?.document;
+  if (!editor || !document) {
+    return;
+  }
+
+  const ast = getAST(editor.document.getText());
+  const holes = findTypeholes(ast);
+
+  const hole = holes.find(
+    (h) =>
+      ts.isPropertyAccessExpression(h.expression) &&
+      h.expression.name.getText() === id
+  );
+
+  if (hole) {
+    const range = getEditorRange(hole);
+    addWarning(document.uri.path, range);
+  }
 }

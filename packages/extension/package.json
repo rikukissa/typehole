@@ -4,7 +4,7 @@
   "publisher": "rikurouvila",
   "description": "🧪  Take samples of runtime values and turn them into type definitions automatically",
   "repository": "https://github.com/rikukissa/typehole",
-  "version": "0.1.7",
+  "version": "1.0.0",
   "private": true,
   "icon": "images/logo.png",
   "galleryBanner": {
@@ -69,6 +69,7 @@
     "esquery": "^1.4.0",
     "fastify": "^3.14.2",
     "fastify-cors": "^5.2.0",
+    "json-ts": "^1.6.4",
     "lmify": "^0.3.0",
     "npm": "^7.10.0",
     "typescript": "^4.1.3"
