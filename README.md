@@ -79,6 +79,8 @@ At this stage, there are no configuration options available.
 
 - Typehole server cannot be running in 2 VSCode editors at the same time as the server port is hard-coded to 17341
 
+- Mixed top level runtime types such as `[{"a":3}, 2]` are transformed into `any[]` because of limitations in [json-ts library](https://github.com/shakyShane/json-ts/blob/master/src/transformer.ts#L202)
+
 ## Release Notes
 
 ### 0.0.1
