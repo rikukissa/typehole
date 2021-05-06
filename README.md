@@ -1,12 +1,13 @@
-<p align="center">
-  <img src="./images/logo.png" width="150px">
-</p>
-
 # Typehole 🕳
+
+<p><img align="left" src="./images/logo.png" width="100px"></p>
 
 Automatically generate TypeScript types and interfaces for all serializable runtime values.
 
 Typehole is a TypeScript development tool for Visual Studio Code that helps you automate creating the initial static typing for runtime values.
+
+<br/>
+<br/>
 
 ![file](https://user-images.githubusercontent.com/1206987/115986088-5646a280-a5b7-11eb-841c-90ab6e10198a.gif)
 
