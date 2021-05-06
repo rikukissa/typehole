@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./images/logo.png" width="150px">
+</p>
+
 # Typehole 🕳
 
 Automatically generate TypeScript types and interfaces for all serializable runtime values.
