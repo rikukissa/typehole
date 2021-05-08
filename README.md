@@ -88,9 +88,11 @@ At this stage, there are no configuration options available.
 
 ## Release Notes
 
-### 0.0.1
+## [1.1.0] - 2021-05-08
 
-The initial release of Typehole.
+### Added
+
+- Automatic PascalCase transformation for all generated interface and type alias names
 
 ---
 

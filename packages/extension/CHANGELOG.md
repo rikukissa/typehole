@@ -4,6 +4,8 @@ All notable changes to the "typehole" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [1.1.0] - 2021-05-08
 
-- Initial release
+### Added
+
+- Automatic PascalCase transformation for all generated interface and type alias names
