@@ -1,16 +1,16 @@
-import * as vscode from "vscode";
 import f from "fastify";
-import {
-  getTypeAliasForId,
-  getAllDependencyTypeDeclarations,
-} from "./transforms/insertTypes";
+import { json2ts } from "json-ts";
 import * as ts from "typescript";
-import { findTypeholes, getAST } from "./parse/module";
+import * as vscode from "vscode";
+
 import { getEditorRange } from "./editor/utils";
 import { error, log } from "./logger";
-
-import { json2ts } from "json-ts";
-import { addWarning } from "./state";
+import { findTypeholes, getAST } from "./parse/module";
+import { addSample, addWarning } from "./state";
+import {
+  getAllDependencyTypeDeclarations,
+  getTypeAliasForId,
+} from "./transforms/insertTypes";
 import { typeNamesToPascalCase } from "./transforms/typeNamesToPascalCase";
 
 const fastify = f({ logger: true });
@@ -28,17 +28,30 @@ export async function startListenerServer() {
   fastify.post("/type", async (request, reply) => {
     const body = request.body as any;
     log(body.id, "-", "New type", JSON.stringify(request.body), "received");
-    onTypeExtracted(body.id, body.interfaces as string);
+    await onTypeExtracted(body.id, body.interfaces as string);
     return reply.code(200).send();
   });
 
   fastify.post("/samples", async (request, reply) => {
     const body = request.body as any;
-    log(body.id, "-", "New sample", JSON.stringify(request.body), "received");
+    log(
+      body.id,
+      "-",
+      "New sample",
+      JSON.stringify(request.body).substr(0, 30),
+      "received"
+    );
 
-    const typeString = json2ts(JSON.stringify(body.sample));
+    const serializedSample = JSON.stringify(body.sample);
 
-    onTypeExtracted(body.id, typeString);
+    const typeString = json2ts(serializedSample);
+    addSample(body.id, body.sample);
+
+    try {
+      await onTypeExtracted(body.id, typeString);
+    } catch (err) {
+      error(err.message);
+    }
 
     return reply.code(200).send();
   });
@@ -86,25 +99,28 @@ async function onTypeExtracted(id: string, types: string) {
     typeAliasNode.parent
   );
 
-  await editor.edit((editBuilder) => {
-    existingDeclarations.forEach((node) => {
-      const range = getEditorRange(node);
-      editBuilder.delete(range);
-    });
-  });
-
   const typesToBeInserted = typeNamesToPascalCase(
     types.replace("IRootObject", typeName)
   ).trim();
 
   await editor.edit((editBuilder) => {
+    existingDeclarations.forEach((node) => {
+      const range = getEditorRange(node);
+      editBuilder.delete(range);
+    });
+
     editBuilder.insert(
       getEditorRange(typeAliasNode.parent).start,
       typesToBeInserted
     );
   });
-  // TODO We could also only format the types we added
-  await vscode.commands.executeCommand("editor.action.formatDocument");
+
+  try {
+    // TODO We could also only format the types we added
+    await vscode.commands.executeCommand("editor.action.formatDocument");
+  } catch (err) {
+    error("Formatting the document failed", err.message);
+  }
 }
 
 async function onUnserializable(id: string) {
