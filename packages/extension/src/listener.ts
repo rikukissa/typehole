@@ -27,6 +27,7 @@ export async function startListenerServer() {
 
   fastify.post("/type", async (request, reply) => {
     const body = request.body as any;
+    log(body.id, "-", "New type", JSON.stringify(request.body), "received");
     onTypeExtracted(body.id, body.interfaces as string);
     return reply.code(200).send();
   });

@@ -13,7 +13,7 @@ events.on("change", (newState: State) => {
         (range) =>
           new vscode.Diagnostic(
             range,
-            "This value cannot be automatically typed by Typehole. Either the value is not JSON serializable or it contains cyclic values",
+            "This value cannot be automatically typed by Typehole. Either the value is not JSON serializable (function, promise etc.) or it contains cyclic values",
             vscode.DiagnosticSeverity.Warning
           )
       )
