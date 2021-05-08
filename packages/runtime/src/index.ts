@@ -72,6 +72,7 @@ function typeholeFactory(id: HoleId) {
     if (serialized === previousValue) {
       return input;
     }
+
     previousValue = serialized;
 
     if (!serialized || (serialized === "{}" && !isPlainObject(input))) {
@@ -84,12 +85,18 @@ function typeholeFactory(id: HoleId) {
   };
 }
 
+const holes: Record<string, ReturnType<typeof typeholeFactory>> = {};
+
 export default new Proxy<Record<string, ReturnType<typeof typeholeFactory>>>(
   {} as any,
   {
     get: function (target, prop, receiver) {
       if (/^t([0-9]+)?$/.test(prop.toString())) {
-        return typeholeFactory(prop);
+        if (!holes[prop as string]) {
+          holes[prop as string] = typeholeFactory(prop);
+        }
+
+        return holes[prop as string];
       }
 
       return Reflect.get(target, prop, receiver);
