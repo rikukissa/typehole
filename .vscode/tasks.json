@@ -3,21 +3,5 @@
 {
 	"version": "2.0.0",
 	"tasks": [
-		{
-			"type": "npm",
-			"script": "watch",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
-			"presentation": {
-				"reveal": "never"
-			},
-			"options": {
-        "cwd": "${workspaceFolder}/packages/extension"
-      },
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
-		}
 	]
 }
