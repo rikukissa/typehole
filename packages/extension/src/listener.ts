@@ -11,6 +11,7 @@ import { error, log } from "./logger";
 
 import { json2ts } from "json-ts";
 import { addWarning } from "./state";
+import { typeNamesToPascalCase } from "./transforms/typeNamesToPascalCase";
 
 const fastify = f({ logger: true });
 fastify.register(require("fastify-cors"));
@@ -91,10 +92,14 @@ async function onTypeExtracted(id: string, types: string) {
     });
   });
 
+  const typesToBeInserted = typeNamesToPascalCase(
+    types.replace("IRootObject", typeName)
+  ).trim();
+
   await editor.edit((editBuilder) => {
     editBuilder.insert(
       getEditorRange(typeAliasNode.parent).start,
-      types.replace("IRootObject", typeName).trim()
+      typesToBeInserted
     );
   });
   // TODO We could also only format the types we added

@@ -1,4 +1,4 @@
-import * as EventEmitter from "events";
+import { EventEmitter } from "events";
 import * as vscode from "vscode";
 import { getId } from "./hole";
 import { log } from "./logger";
