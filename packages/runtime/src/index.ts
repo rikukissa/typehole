@@ -1,7 +1,5 @@
 import fetch from "isomorphic-fetch";
 
-let queue: Promise<any> = Promise.resolve();
-
 function serialize(value: any) {
   let serialized: string | null = null;
   try {
@@ -14,41 +12,72 @@ function isPlainObject(value: any) {
   return typeof value === "object" && value.toString() === "[object Object]";
 }
 
-function typeholeFactory(id: string | symbol | number) {
+type HoleId = string | symbol | number;
+
+function sendUnserializable(holeId: HoleId) {
+  return fetch("http://localhost:17341/unserializable", {
+    method: "POST",
+    mode: "cors",
+    body: JSON.stringify({
+      id: holeId,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).catch((err) => console.log(err.message));
+}
+
+// This is here so that multiple types would not be edited simultaniously
+let sampleQueue: Promise<any> = Promise.resolve();
+function sendSample(holeId: HoleId, input: any) {
+  sampleQueue = sampleQueue.then(() =>
+    fetch("http://localhost:17341/samples", {
+      method: "POST",
+      mode: "cors",
+      body: JSON.stringify({
+        id: holeId,
+        sample: input,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).catch((err) => console.log(err.message))
+  );
+  return sampleQueue;
+}
+
+const debounce = <F extends (...args: any[]) => any>(
+  func: F,
+  waitFor: number
+) => {
+  let timeout: NodeJS.Timeout;
+
+  return (...args: Parameters<F>): Promise<ReturnType<F>> =>
+    new Promise((resolve) => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+
+      timeout = setTimeout(() => resolve(func(...args)), waitFor);
+    });
+};
+
+function typeholeFactory(id: HoleId) {
+  const emitSample = debounce(sendSample, 300);
+  let previousValue: string | null = null;
+
   return function typehole<T = any>(input: T): T {
     const serialized = serialize(input);
 
+    if (serialized === previousValue) {
+      return input;
+    }
+    previousValue = serialized;
+
     if (!serialized || (serialized === "{}" && !isPlainObject(input))) {
-      queue = queue.then(() =>
-        fetch("http://localhost:17341/unserializable", {
-          method: "POST",
-          mode: "cors",
-          body: JSON.stringify({
-            id,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }).catch((err) => console.log(err.message))
-      );
+      sendUnserializable(id);
     } else {
-      try {
-        queue = queue.then(() =>
-          fetch("http://localhost:17341/samples", {
-            method: "POST",
-            mode: "cors",
-            body: JSON.stringify({
-              id,
-              sample: input,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }).catch((err) => console.log(err.message))
-        );
-      } catch (error) {
-        console.error(error);
-      }
+      emitSample(id, input);
     }
 
     return input;

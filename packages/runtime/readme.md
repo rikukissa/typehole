@@ -1,27 +1,33 @@
+# Typehole runtime
+
+A runtime library for [Typehole](https://github.com/rikukissa/typehole).
+
+---
+
 # Template: TypeScript Module [![CI](https://github.com/lukeed/typescript-module/workflows/CI/badge.svg)](https://github.com/lukeed/typescript-module/actions) [![codecov](https://badgen.now.sh/codecov/c/github/lukeed/typescript-module)](https://codecov.io/gh/lukeed/typescript-module)
 
 This is a [clonable template repository](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) for authoring a `npm` module with TypeScript. Out of the box, it:
 
-* Provides minimally-viable `tsconfig.json` settings
-* Scaffolds a silly arithmetic module (`src/index.ts`)
-* Scaffolds test suites for full test coverage (`test/index.ts`)
-* Scaffolds a GitHub Action for Code Integration (CI) that:
-  * checks if compilation is successful
-  * runs the test suite(s)
-  * reports test coverage
-* Generates type definitions (`types/*.d.ts`)
-* Generates multiple distribution formats:
-  * ES Module (`dist/index.mjs`)
-  * CommonJS (`dist/index.js`)
-  * UMD (`dist/index.min.js`)
+- Provides minimally-viable `tsconfig.json` settings
+- Scaffolds a silly arithmetic module (`src/index.ts`)
+- Scaffolds test suites for full test coverage (`test/index.ts`)
+- Scaffolds a GitHub Action for Code Integration (CI) that:
+  - checks if compilation is successful
+  - runs the test suite(s)
+  - reports test coverage
+- Generates type definitions (`types/*.d.ts`)
+- Generates multiple distribution formats:
+  - ES Module (`dist/index.mjs`)
+  - CommonJS (`dist/index.js`)
+  - UMD (`dist/index.min.js`)
 
 All configuration is accessible via the `rollup.config.js` and a few `package.json` keys:
 
-* `name` &mdash; the name of your module
-* `main` &mdash; the destination file for your CommonJS build
-* `module` &mdash; the destination file for your ESM build (optional but recommended)
-* `unpkg` &mdash; the destination file for your UMD build (optional for [unpkg.com](https://unpkg.com/))
-* `umd:name` &mdash; the UMD global name for your module (optional)
+- `name` &mdash; the name of your module
+- `main` &mdash; the destination file for your CommonJS build
+- `module` &mdash; the destination file for your ESM build (optional but recommended)
+- `unpkg` &mdash; the destination file for your UMD build (optional for [unpkg.com](https://unpkg.com/))
+- `umd:name` &mdash; the UMD global name for your module (optional)
 
 ## Setup
 
@@ -66,10 +72,11 @@ $ npm version <patch|minor|major> && git push origin master --tags && npm publis
 ```
 
 This command sequence will:
-* version your module, updating the `package.json` "version"
-* create and push a `git` tag (matching the new version) to your repository
-* build your module (via the `prepublishOnly` script)
-* publish the module to the npm registry
+
+- version your module, updating the `package.json` "version"
+- create and push a `git` tag (matching the new version) to your repository
+- build your module (via the `prepublishOnly` script)
+- publish the module to the npm registry
 
 ## License
 
