@@ -23,6 +23,34 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": [
+      {
+        "title": "Typehole",
+        "properties": {
+          "typehole.runtime.autoInstall": {
+            "type": "boolean",
+            "default": true,
+            "description": "Installs Typehole runtime package automatically when the first typehole is added",
+            "scope": "window"
+          },
+          "typehole.runtime.projectPath": {
+            "type": "string",
+            "description": "Location where Typehole runtime package is installed",
+            "scope": "window"
+          },
+          "typehole.runtime.packageManager": {
+            "type": "string",
+            "default": "npm",
+            "enum": [
+              "npm",
+              "yarn"
+            ],
+            "description": "Package manager to use when installing the runtime",
+            "scope": "window"
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "title": "Typehole: Remove all typeholes from all files",

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { install, setRootDir } from "lmify";
+import { install, setRootDir, setPackageManager } from "lmify";
 
 import * as ts from "typescript";
 import {
@@ -17,15 +17,88 @@ import {
 import { isServerRunning, startListenerServer } from "../listener";
 import { getAvailableId } from "../state";
 import {
-  getProjectPath,
   insertTypeholeImport,
   insertRecorderToSelection,
   last,
   getPlaceholderTypeName,
   startRenamingPlaceholderType,
 } from "../extension";
-import { log } from "../logger";
-import { getEditorRange } from "../editor/utils";
+import { log, error } from "../logger";
+import { getEditorRange, getProjectPath, getProjectURI } from "../editor/utils";
+import { getConfiguration, PackageManager } from "../config";
+
+async function getPackageJSONDirectories() {
+  const include = new vscode.RelativePattern(
+    getProjectURI()!,
+    "**/package.json"
+  );
+
+  const files = await vscode.workspace.findFiles(include);
+
+  // Done like this as findFiles didn't respect the exclude parameter
+  return files.filter((f) => !f.path.includes("node_modules"));
+}
+
+async function detectPackageManager(): Promise<PackageManager> {
+  const npmLocks = await vscode.workspace.findFiles("package-lock.json");
+  const yarnLocks = await vscode.workspace.findFiles("yarn.lock");
+
+  if (npmLocks.length > 0 && yarnLocks.length === 0) {
+    return "npm";
+  }
+
+  if (yarnLocks.length > 0 && npmLocks.length === 0) {
+    return "yarn";
+  }
+}
+
+async function resolveProjectRoot(
+  document: vscode.TextDocument,
+  options: vscode.Uri[]
+) {
+  const config = getConfiguration("", document.uri);
+  const answer = await vscode.window.showQuickPick(
+    options.map((o) => o.path.replace("/package.json", "")),
+    {
+      placeHolder: "Where should the runtime package be installed?",
+    }
+  );
+
+  if (answer) {
+    config.update(
+      "typehole.runtime.projectPath",
+      answer,
+      vscode.ConfigurationTarget.Workspace
+    );
+    return answer;
+  }
+}
+
+async function getPackageManager(document: vscode.TextDocument) {
+  const config = getConfiguration("", document.uri);
+  if (config.packageManager) {
+    return config.packageManager;
+  }
+
+  let packageManager = await detectPackageManager();
+  if (packageManager) {
+    return packageManager;
+  }
+
+  packageManager = (await vscode.window.showQuickPick(["npm", "yarn"], {
+    placeHolder:
+      "Which package manager should Typehole use to install the runtime package?",
+  })) as PackageManager;
+
+  if (packageManager) {
+    config.update(
+      "typehole.runtime.packageManager",
+      packageManager,
+      vscode.ConfigurationTarget.Workspace
+    );
+    return packageManager;
+  }
+}
 
 export async function addATypehole() {
   const editor = vscode.window.activeTextEditor;
@@ -33,23 +106,54 @@ export async function addATypehole() {
   if (!editor || !document) {
     return;
   }
+  const config = getConfiguration("", document.uri);
 
-  if (!isRuntimeInstalled()) {
+  let packageManager = await getPackageManager(document);
+
+  if (!packageManager) {
+    return;
+  }
+  setPackageManager(packageManager);
+
+  const packageRoots = await getPackageJSONDirectories();
+  let projectPath = getProjectPath();
+
+  if (packageRoots.length > 1) {
+    projectPath =
+      config.projectPath || (await resolveProjectRoot(document, packageRoots));
+  }
+
+  if (!projectPath) {
+    return;
+  }
+
+  const installed = isRuntimeInstalled(projectPath);
+
+  if (!installed && config.autoInstall) {
     vscode.window.showInformationMessage(
       "Typehole: Installing runtime package..."
     );
-    log("Detecting package manager from", getProjectPath()!);
+
+    log("Detecting package manager from", projectPath);
+
     try {
-      (setRootDir as any)(getProjectPath());
+      (setRootDir as any)(projectPath);
       await install(["-D", "typehole", "--no-save"]);
+      log("Runtime installed");
       vscode.window.showInformationMessage(
         "Typehole: Runtime package installed"
       );
-    } catch (error) {
+    } catch (err) {
+      error(err.message);
       vscode.window.showErrorMessage(
-        "Typehole: Failed to install runtime.\nInstall it manually by running npm install typehole"
+        'Typehole: Failed to install runtime.\nInstall it manually by running "npm install typehole"'
       );
     }
+  } else if (!installed) {
+    vscode.window.showErrorMessage(`Typehole: Install the runtime by running
+ "npm install typehole" or
+ "yarn add typehole"`);
+    return;
   }
 
   if (!isServerRunning()) {
@@ -58,7 +162,9 @@ export async function addATypehole() {
       await startListenerServer();
       vscode.window.showInformationMessage("Typehole: Server ready");
     } catch (error) {
-      vscode.window.showErrorMessage("Typehole failed to start", error.message);
+      vscode.window.showErrorMessage(
+        "Typehole failed to start: " + error.message
+      );
     }
   }
 
@@ -165,11 +271,11 @@ function insertTypeToVariableDeclaration(
   }
 }
 
-function isRuntimeInstalled() {
+function isRuntimeInstalled(projectRoot: string) {
   try {
-    log("Searching for runtime library in", getProjectPath()!);
+    log("Searching for runtime library in", projectRoot);
     require.resolve("typehole", {
-      paths: [getProjectPath()!],
+      paths: [projectRoot],
     });
     return true;
   } catch (error) {

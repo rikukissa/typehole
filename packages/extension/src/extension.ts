@@ -17,7 +17,7 @@ import {
   lineCharacterPositionInText,
 } from "./parse/utils";
 import { startListenerServer, stopListenerServer } from "./listener";
-import { getEditorRange } from "./editor/utils";
+import { getEditorRange, getProjectURI } from "./editor/utils";
 import { TypeHoler } from "./code-action";
 import { clearWarnings, getState, onFileChanged, onFileDeleted } from "./state";
 
@@ -115,16 +115,6 @@ export function insertRecorderToSelection(
   const nodeRange = getEditorRange(selectedNode);
 
   editBuilder.replace(nodeRange, wrapIntoRecorder(id, selectedNode));
-}
-
-function getProjectURI() {
-  if (!vscode.workspace.workspaceFolders) {
-    return;
-  }
-  return vscode.workspace.workspaceFolders[0].uri;
-}
-export function getProjectPath() {
-  return getProjectURI()?.path;
 }
 
 export async function activate(context: vscode.ExtensionContext) {

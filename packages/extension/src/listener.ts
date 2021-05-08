@@ -21,47 +21,47 @@ export function isServerRunning() {
   return running;
 }
 
+fastify.post("/type", async (request, reply) => {
+  const body = request.body as any;
+  log(body.id, "-", "New type", JSON.stringify(request.body), "received");
+  await onTypeExtracted(body.id, body.interfaces as string);
+  return reply.code(200).send();
+});
+
+fastify.post("/samples", async (request, reply) => {
+  const body = request.body as any;
+  log(
+    body.id,
+    "-",
+    "New sample",
+    JSON.stringify(request.body).substr(0, 30),
+    "received"
+  );
+
+  const serializedSample = JSON.stringify(body.sample);
+
+  const typeString = json2ts(serializedSample);
+  addSample(body.id, body.sample);
+
+  try {
+    await onTypeExtracted(body.id, typeString);
+  } catch (err) {
+    error(err.message);
+  }
+
+  return reply.code(200).send();
+});
+
+fastify.post("/unserializable", async (request, reply) => {
+  const body = request.body as any;
+  error("Value in typehole", body.id, "is unserializable");
+  onUnserializable(body.id);
+  return reply.code(200).send();
+});
+
 export async function startListenerServer() {
   log("Requesting HTTP server start");
   running = true;
-
-  fastify.post("/type", async (request, reply) => {
-    const body = request.body as any;
-    log(body.id, "-", "New type", JSON.stringify(request.body), "received");
-    await onTypeExtracted(body.id, body.interfaces as string);
-    return reply.code(200).send();
-  });
-
-  fastify.post("/samples", async (request, reply) => {
-    const body = request.body as any;
-    log(
-      body.id,
-      "-",
-      "New sample",
-      JSON.stringify(request.body).substr(0, 30),
-      "received"
-    );
-
-    const serializedSample = JSON.stringify(body.sample);
-
-    const typeString = json2ts(serializedSample);
-    addSample(body.id, body.sample);
-
-    try {
-      await onTypeExtracted(body.id, typeString);
-    } catch (err) {
-      error(err.message);
-    }
-
-    return reply.code(200).send();
-  });
-
-  fastify.post("/unserializable", async (request, reply) => {
-    const body = request.body as any;
-    error("Value in typehole", body.id, "is unserializable");
-    onUnserializable(body.id);
-    return reply.code(200).send();
-  });
 
   try {
     await fastify.listen(17341);

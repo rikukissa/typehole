@@ -10,3 +10,13 @@ export const getEditorRange = (node: ts.Node) => {
     new vscode.Position(end.line, end.character)
   );
 };
+
+export function getProjectURI() {
+  if (!vscode.workspace.workspaceFolders) {
+    return;
+  }
+  return vscode.workspace.workspaceFolders[0].uri;
+}
+export function getProjectPath() {
+  return getProjectURI()?.path;
+}
