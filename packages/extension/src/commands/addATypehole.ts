@@ -83,13 +83,13 @@ export async function addATypehole() {
 
   const typeName = getPlaceholderTypeName(updatedAST);
   await editor.edit((editBuilder) => {
-    if (variableDeclaration) {
+    if (variableDeclaration && !variableDeclaration.type) {
       insertTypeToVariableDeclaration(
         variableDeclaration,
         updatedAST,
         editBuilder
       );
-    } else {
+    } else if (!variableDeclaration) {
       insertTypeGenericVariableParameter(
         newlyCreatedTypeHole,
         typeName,
@@ -97,9 +97,10 @@ export async function addATypehole() {
         editBuilder
       );
     }
-
-    /* Add a placeholder type */
-    insertAPlaceholderType(typeName, editBuilder, newlyCreatedTypeHole);
+    if (!variableDeclaration || !variableDeclaration.type) {
+      /* Add a placeholder type */
+      insertAPlaceholderType(typeName, editBuilder, newlyCreatedTypeHole);
+    }
   });
 
   startRenamingPlaceholderType(typeName, editor, document);
@@ -142,7 +143,7 @@ function insertTypeGenericVariableParameter(
 }
 
 function insertTypeToVariableDeclaration(
-  variableDeclaration: ts.Node,
+  variableDeclaration: ts.VariableDeclaration,
   ast: ts.SourceFile,
   editBuilder: vscode.TextEditorEdit
 ) {

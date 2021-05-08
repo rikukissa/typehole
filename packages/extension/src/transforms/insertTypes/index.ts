@@ -163,7 +163,9 @@ export function getTypeAliasForId(id: string, ast: ts.Node) {
   return null;
 }
 
-export function getWrappingVariableDeclaration(node: ts.Node): ts.Node | null {
+export function getWrappingVariableDeclaration(
+  node: ts.Node
+): ts.VariableDeclaration | null {
   if (ts.isVariableDeclaration(node)) {
     return node;
   }
