@@ -98,7 +98,7 @@
     "esquery": "^1.4.0",
     "fastify": "^3.14.2",
     "fastify-cors": "^5.2.0",
-    "json-ts": "^1.6.4",
+    "json-to-ts": "^1.7.0",
     "lmify": "^0.3.0",
     "npm": "^7.10.0",
     "pascalcase": "^0.1.1",

@@ -1,5 +1,5 @@
 import f from "fastify";
-import { json2ts } from "json-ts";
+
 import * as ts from "typescript";
 import * as vscode from "vscode";
 
@@ -11,7 +11,7 @@ import {
   getAllDependencyTypeDeclarations,
   getTypeAliasForId,
 } from "./transforms/insertTypes";
-import { typeNamesToPascalCase } from "./transforms/typeNamesToPascalCase";
+import { samplesToType } from "./transforms/samplesToType";
 
 const fastify = f({ logger: true });
 fastify.register(require("fastify-cors"));
@@ -22,9 +22,9 @@ export function isServerRunning() {
 }
 
 fastify.post("/type", async (request, reply) => {
-  const body = request.body as any;
-  log(body.id, "-", "New type", JSON.stringify(request.body), "received");
-  await onTypeExtracted(body.id, body.interfaces as string);
+  vscode.window.showWarningMessage(
+    "Typehole: You seem to be running an old version of the runtime. Remove 'typehole' package from node_modules and add a new typehole to download the latest version or install it manually."
+  );
   return reply.code(200).send();
 });
 
@@ -38,10 +38,8 @@ fastify.post("/samples", async (request, reply) => {
     "received"
   );
 
-  const serializedSample = JSON.stringify(body.sample);
-
-  const typeString = json2ts(serializedSample);
-  addSample(body.id, body.sample);
+  const samples = addSample(body.id, body.sample);
+  const typeString = samplesToType(samples);
 
   try {
     await onTypeExtracted(body.id, typeString);
@@ -89,19 +87,19 @@ async function onTypeExtracted(id: string, types: string) {
     return;
   }
   const ast = getAST(editor.document.getText());
+
   const typeAliasNode = getTypeAliasForId(id, ast);
   if (!typeAliasNode) {
     return;
   }
+
   const typeName = typeAliasNode.getText();
 
   const existingDeclarations = getAllDependencyTypeDeclarations(
     typeAliasNode.parent
   );
 
-  const typesToBeInserted = typeNamesToPascalCase(
-    types.replace("IRootObject", typeName)
-  ).trim();
+  const typesToBeInserted = types.replace("TypeholeRoot", typeName).trim();
 
   await editor.edit((editBuilder) => {
     existingDeclarations.forEach((node) => {

@@ -76,6 +76,10 @@ function typeholeFactory(id: HoleId) {
     previousValue = serialized;
 
     if (!serialized || (serialized === "{}" && !isPlainObject(input))) {
+      console.info("Typehole:", "Cannot serialize value", {
+        input,
+        serialized,
+      });
       sendUnserializable(id);
     } else {
       emitSample(id, input);
