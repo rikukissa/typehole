@@ -1,4 +1,3 @@
-// import { json2ts } from "json-ts";
 import json2ts from "json-to-ts";
 
 export function samplesToType(samples: any[]): string {

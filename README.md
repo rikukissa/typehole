@@ -53,7 +53,9 @@ This plugin is still very experimental, so please expect and report issues.
 ## Features
 
 - Generate TypeScript types from runtime values
-- Wrap values automatically to typeholes with a code action<br/><img width="500" src="./images/code-action.png" />
+- Augment your types by providing more runtime values<br/><br/><img width="500" src="./images/samples.gif" />
+
+- Wrap values automatically to typeholes with a code action<br/><br/><img width="500" src="./images/code-action.png" />
 
 ### Values that can be automatically typed
 
@@ -87,6 +89,18 @@ At this stage, there are no configuration options available.
 - Mixed top level runtime types such as `[{"a":3}, 2]` are transformed into `any[]` because of limitations in [json-ts library](https://github.com/shakyShane/json-ts/blob/master/src/transformer.ts#L202)
 
 ## Release Notes
+
+## [1.4.0] - 2021-05-09
+
+### Added
+
+- Sample collection. Provide multiple different values to a typehole and the generated type gets refined based on them.
+
+## [1.3.0] - 2021-05-08
+
+### Added
+
+- Configuration options for project path, package manager and if runtime should be automatically installed
 
 ## [1.1.0] - 2021-05-08
 
