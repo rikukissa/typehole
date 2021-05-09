@@ -4,6 +4,7 @@ import * as ts from "typescript";
 import * as vscode from "vscode";
 
 import { getEditorRange } from "./editor/utils";
+import { clientIdToStateId } from "./hole";
 import { error, log } from "./logger";
 import { findTypeholes, getAST } from "./parse/module";
 import { addSample, addWarning } from "./state";
@@ -38,7 +39,7 @@ fastify.post("/samples", async (request, reply) => {
     "received"
   );
 
-  const samples = addSample(body.id, body.sample);
+  const samples = addSample(clientIdToStateId(body.id), body.sample);
   const typeString = samplesToType(samples);
 
   try {

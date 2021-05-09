@@ -82,6 +82,7 @@ function createTypehole(id: number, fileName: string) {
 
 function removeTypehole(id: number) {
   const currentState = getState();
+
   setState(
     clearSamples(id, {
       ...currentState,
