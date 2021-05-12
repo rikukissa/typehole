@@ -1,8 +1,7 @@
 import * as vscode from "vscode";
 import { events, getWarnings, State } from "./state";
-export const diagnosticCollection = vscode.languages.createDiagnosticCollection(
-  "typehole"
-);
+export const diagnosticCollection =
+  vscode.languages.createDiagnosticCollection("typehole");
 
 events.on("change", (newState: State) => {
   diagnosticCollection.clear();
@@ -13,7 +12,7 @@ events.on("change", (newState: State) => {
         (range) =>
           new vscode.Diagnostic(
             range,
-            "This value cannot be automatically typed by Typehole. Either the value is not JSON serializable (function, promise etc.) or it contains cyclic values",
+            "This value cannot be automatically typed by Typehole. Either the value is not JSON serializable (function, promise etc.) or it contains a cyclic values i.e. when an object references itself.",
             vscode.DiagnosticSeverity.Warning
           )
       )

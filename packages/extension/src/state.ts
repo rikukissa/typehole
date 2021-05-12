@@ -35,6 +35,13 @@ export function getWarnings(fileName: string) {
 
 export function addWarning(fileName: string, range: vscode.Range) {
   const state = getState();
+  const alreadyExists = getWarnings(fileName).some(
+    (w) => w.start.isEqual(range.start) && w.end.isEqual(range.end)
+  );
+  if (alreadyExists) {
+    return;
+  }
+
   setState({
     ...state,
     warnings: {

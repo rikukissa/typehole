@@ -90,6 +90,14 @@ At this stage, there are no configuration options available.
 
 ## Release Notes
 
+## [Unreleased]
+
+### Fixed
+
+- Unserializable diagnostic now shown only once per typehole. Previously the tooltip could have the same warning multiple times.
+
+### Added
+
 ## [1.4.0] - 2021-05-09
 
 ### Added
