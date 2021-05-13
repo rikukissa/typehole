@@ -9,7 +9,7 @@ Typehole is a TypeScript development tool for Visual Studio Code that helps you 
 <br/>
 <br/>
 
-![file](https://user-images.githubusercontent.com/1206987/115986088-5646a280-a5b7-11eb-841c-90ab6e10198a.gif)
+![file](./images/demo.gif)
 
 ### How does it work?
 
