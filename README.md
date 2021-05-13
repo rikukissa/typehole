@@ -19,7 +19,7 @@ const response = await axios.get("https://reddit.com/r/videos.json");
 const data = response.data;
 ```
 
-2. Place the value inside a typehole
+2. Place the value inside a typehole by selecting an expression and opening the **Quick Fix** menu by pressing ⌘ + . (macOS) or ctrl + . (Windows).
 
 ```ts
 const data = typehole.t(response.data);
@@ -36,7 +36,7 @@ const response = await axios.get("https://reddit.com/r/videos.json");
 const data: RedditResponse = typehole.t(response.data);
 ```
 
-3. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them.
+3. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#Commands) for easy removal of typeholes.
 
 ```ts
 interface RedditResponse {
@@ -84,8 +84,6 @@ At this stage, there are no configuration options available.
 ## Known Issues
 
 - Typehole server cannot be running in 2 VSCode editors at the same time as the server port is hard-coded to 17341
-
-- Mixed top level runtime types such as `[{"a":3}, 2]` are transformed into `any[]` because of limitations in [json-ts library](https://github.com/shakyShane/json-ts/blob/master/src/transformer.ts#L202)
 
 ## Release Notes
 
