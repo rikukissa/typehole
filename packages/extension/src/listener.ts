@@ -14,56 +14,60 @@ import {
 } from "./transforms/insertTypes";
 import { samplesToType } from "./transforms/samplesToType";
 
-const fastify = f({ logger: true });
-fastify.register(require("fastify-cors"));
-
 let running = false;
 export function isServerRunning() {
   return running;
 }
+let server = createServer();
 
-fastify.post("/type", async (request, reply) => {
-  vscode.window.showWarningMessage(
-    "Typehole: You seem to be running an old version of the runtime. Remove 'typehole' package from node_modules and add a new typehole to download the latest version or install it manually."
-  );
-  return reply.code(200).send();
-});
+function createServer() {
+  const fastify = f({ logger: true });
+  fastify.register(require("fastify-cors"));
 
-fastify.post("/samples", async (request, reply) => {
-  const body = request.body as any;
-  log(
-    body.id,
-    "-",
-    "New sample",
-    JSON.stringify(request.body).substr(0, 30),
-    "received"
-  );
+  fastify.post("/type", async (request, reply) => {
+    vscode.window.showWarningMessage(
+      "Typehole: You seem to be running an old version of the runtime. Remove 'typehole' package from node_modules and add a new typehole to download the latest version or install it manually."
+    );
+    return reply.code(200).send();
+  });
 
-  const samples = addSample(clientIdToStateId(body.id), body.sample);
-  const typeString = samplesToType(samples);
+  fastify.post("/samples", async (request, reply) => {
+    const body = request.body as any;
+    log(
+      body.id,
+      "-",
+      "New sample",
+      JSON.stringify(request.body).substr(0, 30),
+      "received"
+    );
 
-  try {
-    await onTypeExtracted(body.id, typeString);
-  } catch (err) {
-    error(err.message);
-  }
+    const samples = addSample(clientIdToStateId(body.id), body.sample);
+    const typeString = samplesToType(samples);
 
-  return reply.code(200).send();
-});
+    try {
+      await onTypeExtracted(body.id, typeString);
+    } catch (err) {
+      error(err.message);
+    }
 
-fastify.post("/unserializable", async (request, reply) => {
-  const body = request.body as any;
-  error("Value in typehole", body.id, "is unserializable");
-  onUnserializable(body.id);
-  return reply.code(200).send();
-});
+    return reply.code(200).send();
+  });
+
+  fastify.post("/unserializable", async (request, reply) => {
+    const body = request.body as any;
+    error("Value in typehole", body.id, "is unserializable");
+    onUnserializable(body.id);
+    return reply.code(200).send();
+  });
+  return fastify;
+}
 
 export async function startListenerServer() {
   log("Requesting HTTP server start");
   running = true;
 
   try {
-    await fastify.listen(17341);
+    await server.listen(17341);
     log("HTTP server started");
   } catch (err) {
     error("Starting HTTP server failed");
@@ -74,8 +78,14 @@ export async function startListenerServer() {
 }
 
 export async function stopListenerServer() {
+  log("Stopping the HTTP server");
   try {
-    await fastify.close();
+    await server.close();
+    // Server is recreated as Fastify doesn't support closing and restarting a server
+    // https://github.com/fastify/fastify/issues/2411
+    server = createServer();
+    running = false;
+    log("HTTP server server stopped");
   } catch (error) {
     running = false;
   }

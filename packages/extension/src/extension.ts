@@ -16,10 +16,21 @@ import {
   getDescendantAtRange,
   lineCharacterPositionInText,
 } from "./parse/utils";
-import { startListenerServer, stopListenerServer } from "./listener";
+import {
+  isServerRunning,
+  startListenerServer,
+  stopListenerServer,
+} from "./listener";
 import { getEditorRange, getProjectURI } from "./editor/utils";
 import { TypeHoler } from "./code-action";
-import { clearWarnings, getState, onFileChanged, onFileDeleted } from "./state";
+import {
+  clearWarnings,
+  events,
+  getState,
+  onFileChanged,
+  onFileDeleted,
+  State,
+} from "./state";
 
 import { readFile } from "fs";
 import { log } from "./logger";
@@ -128,6 +139,36 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   /*
+   * Start and stop HTTP listener based on the amount of holes
+   */
+
+  let previousState = getState();
+  events.on("change", async (newState: State) => {
+    const allHolesRemoved =
+      previousState.holes.length > 0 && newState.holes.length === 0;
+
+    previousState = newState;
+
+    if (allHolesRemoved) {
+      vscode.window.showInformationMessage("Typehole: Stopping the server");
+      await stopListenerServer();
+      vscode.window.showInformationMessage("Typehole: Server stopped");
+    }
+
+    if (newState.holes.length > 0 && !isServerRunning()) {
+      try {
+        vscode.window.showInformationMessage("Typehole: Starting server...");
+        await startListenerServer();
+        vscode.window.showInformationMessage("Typehole: Server ready");
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          "Typehole failed to start the HTTP listener: " + error.message
+        );
+      }
+    }
+  });
+
+  /*
    * Initialize state
    */
 
@@ -140,21 +181,6 @@ export async function activate(context: vscode.ExtensionContext) {
   await Promise.all(existingFiles.map(fileChanged));
   const holes = getState().holes;
   log("Found", holes.length.toString(), "holes in the workspace");
-
-  if (holes.length > 0) {
-    try {
-      log("Starting the server");
-      await startListenerServer();
-      vscode.window.showInformationMessage(
-        "Typehole server ready to receive samples."
-      );
-    } catch (error) {
-      vscode.window.showErrorMessage(
-        "Typehole failed to start its server. Make sure you are not running typehole server in multiple VSCode windows and port 17341 is available for listening."
-      );
-      error("Failed to start server", error.message);
-    }
-  }
 
   /*
    * Setup file watchers to enable holes in multile files

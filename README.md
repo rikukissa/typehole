@@ -92,9 +92,13 @@ At this stage, there are no configuration options available.
 
 ## [Unreleased]
 
+## [1.4.1] - 2021-05-09
+
 ### Fixed
 
 - Unserializable diagnostic now shown only once per typehole. Previously the tooltip could have the same warning multiple times.
+
+- Server is now stopped once all typeholes are removed. Restarting the server now also works
 
 ### Added
 

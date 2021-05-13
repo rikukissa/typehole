@@ -14,7 +14,7 @@ import {
   getNodeEndPosition,
   getParentOnRootLevel,
 } from "../parse/module";
-import { isServerRunning, startListenerServer } from "../listener";
+
 import { getAvailableId } from "../state";
 import {
   insertTypeholeImport,
@@ -156,18 +156,6 @@ export async function addATypehole() {
     return;
   }
 
-  if (!isServerRunning()) {
-    try {
-      vscode.window.showInformationMessage("Typehole: Starting server...");
-      await startListenerServer();
-      vscode.window.showInformationMessage("Typehole: Server ready");
-    } catch (error) {
-      vscode.window.showErrorMessage(
-        "Typehole failed to start: " + error.message
-      );
-    }
-  }
-
   const fullFile = document.getText();
   const ast = getAST(fullFile);
   const id = getAvailableId();
@@ -183,9 +171,8 @@ export async function addATypehole() {
 
   const newlyCreatedTypeHole = last(findTypeholes(updatedAST));
 
-  const variableDeclaration = getWrappingVariableDeclaration(
-    newlyCreatedTypeHole
-  );
+  const variableDeclaration =
+    getWrappingVariableDeclaration(newlyCreatedTypeHole);
 
   const typeName = getPlaceholderTypeName(updatedAST);
   await editor.edit((editBuilder) => {
