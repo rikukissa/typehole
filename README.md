@@ -14,20 +14,20 @@ Typehole is a TypeScript development tool for Visual Studio Code that automates 
 
 1. Find an `any` / `unknown` value you need an interface for
 
-```ts
+```typescript
 const response = await axios.get("https://reddit.com/r/videos.json");
 const data = response.data;
 ```
 
 2. Place the value inside a typehole by selecting an expression and opening the **Quick Fix** menu by pressing ⌘ + . (macOS) or ctrl + . (Windows).
 
-```ts
+```typescript
 const data = typehole.t(response.data);
 ```
 
 3. Run your code either in a browser or in Node.js. Typehole runtime captures the value and sends it back to your code editor. The VSCode extension records the captured value, turns all the values from that typehole into an interface and inserts it into the same module.
 
-```ts
+```typescript
 interface RedditResponse {
   /* ✨ Actual fields and types are automatically generated ✨ */
 }
@@ -38,7 +38,7 @@ const data: RedditResponse = typehole.t(response.data);
 
 3. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#Commands) for easy removal of typeholes.
 
-```ts
+```typescript
 interface RedditResponse {
   /* ✨ Actual fields and types are automatically generated ✨ */
 }
