@@ -79,7 +79,11 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ## Extension Settings
 
-At this stage, there are no configuration options available.
+| Setting                         | Type        | Default | Description                                                                     |
+| ------------------------------- | ----------- | ------- | ------------------------------------------------------------------------------- |
+| typehole.runtime.autoInstall    | boolean     | true    | Install Typehole runtime package automatically when the first typehole is added |
+| typehole.runtime.projectPath    | string      |         | Project directory where Typehole runtime should be installed                    |
+| typehole.runtime.packageManager | npm \| yarn | npm     | Package manager to be used when installing the runtime                          |
 
 ## Known Issues
 
