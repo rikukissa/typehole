@@ -156,7 +156,9 @@ export function getTypeAliasForId(id: string, ast: ts.Node) {
     variableDeclaration.type;
 
   if (holeIsValueInVariableDeclaration) {
-    const typeReference = (variableDeclaration as ts.VariableDeclaration).type!.getText();
+    const typeReference = (
+      variableDeclaration as ts.VariableDeclaration
+    ).type!.getText();
     return findDeclarationWithName(typeReference, ast);
   }
 

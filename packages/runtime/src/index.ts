@@ -62,28 +62,43 @@ const debounce = <F extends (...args: any[]) => any>(
     });
 };
 
+async function solveWrapperTypes(value: any) {
+  if (typeof value?.then === "function") {
+    return {
+      __typehole_wrapper_type__: "Promise",
+      __typehole_value__: await value,
+    };
+  }
+  return value;
+}
+
 function typeholeFactory(id: HoleId) {
   const emitSample = debounce(sendSample, 300);
   let previousValue: string | null = null;
 
   return function typehole<T = any>(input: T): T {
-    const serialized = serialize(input);
+    solveWrapperTypes(input).then((withWrapperTypes) => {
+      const serialized = serialize(withWrapperTypes);
 
-    if (serialized === previousValue) {
-      return input;
-    }
+      if (serialized === previousValue) {
+        return input;
+      }
 
-    previousValue = serialized;
+      previousValue = serialized;
 
-    if (!serialized || (serialized === "{}" && !isPlainObject(input))) {
-      console.info("Typehole:", "Cannot serialize value", {
-        input,
-        serialized,
-      });
-      sendUnserializable(id);
-    } else {
-      emitSample(id, input);
-    }
+      if (
+        !serialized ||
+        (serialized === "{}" && !isPlainObject(withWrapperTypes))
+      ) {
+        console.info("Typehole:", "Cannot serialize value", {
+          input,
+          serialized,
+        });
+        sendUnserializable(id);
+      } else {
+        emitSample(id, withWrapperTypes);
+      }
+    });
 
     return input;
   };

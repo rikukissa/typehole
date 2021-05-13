@@ -69,7 +69,7 @@ All primitive values and values that are JSON serializable.
 
 So all values you can receive as an HTTP request payload can be turned into an interface.
 
-All other values (promises, functions etc.) will be typed as `any`.
+From 1.4.0 forward also Promises are supported. All other values (functions etc.) will be typed as `any`.
 
 ## Commands
 
@@ -88,6 +88,8 @@ At this stage, there are no configuration options available.
 ## Release Notes
 
 ## [Unreleased]
+
+- Support for inferring Promises 👀
 
 ## [1.4.1] - 2021-05-09
 
