@@ -13,20 +13,20 @@ Typehole is a TypeScript development tool for Visual Studio Code that helps you 
 
 ### How does it work?
 
-1. Find something you need an interface for
+1. Find an `any` / `unknown` value you need an interface for
 
 ```ts
 const response = await axios.get("https://reddit.com/r/videos.json");
 const data = response.data;
 ```
 
-2. Add a typehole around the value with an unknown type
+2. Place the value inside a typehole
 
 ```ts
 const data = typehole.t(response.data);
 ```
 
-3. Run your code (either in a browser or with Node.js), and Typehole takes care of the rest
+3. Run your code either in a browser or in Node.js. Typehole runtime captures the value and sends it back to your code editor. The VSCode extension records the captured value, turns all the values from that typehole into an interface and inserts it into the same module.
 
 ```ts
 interface RedditResponse {
@@ -37,7 +37,7 @@ const response = await axios.get("https://reddit.com/r/videos.json");
 const data: RedditResponse = typehole.t(response.data);
 ```
 
-3. Remove the typehole, and you're good to go. Typeholes are meant to be development-time only, so you shouldn't commit them.
+3. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them.
 
 ```ts
 interface RedditResponse {
