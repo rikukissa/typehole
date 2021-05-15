@@ -60,6 +60,11 @@ export function getPlaceholderTypeName(document: ts.SourceFile) {
     results = tsquery.query(
       document,
       `TypeAliasDeclaration > Identifier[name="AutoDiscovered${n}"]`
+    ).concat(
+      tsquery.query(
+        document,
+        `InterfaceDeclaration > Identifier[name="AutoDiscovered${n}"]`
+      )
     );
   }
 
