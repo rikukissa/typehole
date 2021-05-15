@@ -1,4 +1,4 @@
-# Typeh<img src="./images/title-logo.png" align="top" width="20px">le
+# Typeh<img src="./images/title-logo.png" align="top" width="24px">le
 
 Automatically generate TypeScript types and interfaces for all serializable runtime values.
 
