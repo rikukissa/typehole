@@ -1,6 +1,4 @@
-# Typehole 🕳
-
-<p><img align="left" src="./images/logo.png" width="100px"></p>
+# Typeh<img src="./images/logo.png" width="20px">le
 
 Automatically generate TypeScript types and interfaces for all serializable runtime values.
 
