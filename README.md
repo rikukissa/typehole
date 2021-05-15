@@ -93,7 +93,16 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ## [Unreleased]
 
+## [1.5.0] - 2021-05-15
+
+### Added
+
 - Support for inferring Promises 👀
+
+### Fixed
+
+- Runtime now installed also on startup if there are typeholes in your code
+- No more duplicate AutoDiscoveredN types
 
 ## [1.4.1] - 2021-05-09
 
