@@ -10,19 +10,26 @@ Typehole is a TypeScript development tool for Visual Studio Code that automates 
 
 ![file](./images/demo.gif)
 
-### How does it work?
+## Installation
+
+Install the [Visual Studio Code - extension](https://marketplace.visualstudio.com/items?itemName=rikurouvila.typehole). No additional build tooling or compiler plugins are needed.
+
+## How does it work?
 
 1. Find an `any` / `unknown` value you need an interface for
 
 ```typescript
-const response = await axios.get("https://reddit.com/r/videos.json");
-const data = response.data;
+const response = await axios.get("https://reddit.com/r/typescript.json");
+const data /* any */ = response.data;
 ```
 
-2. Place the value inside a typehole by selecting an expression and opening the **Quick Fix** menu by pressing ⌘ + . (macOS) or ctrl + . (Windows).
+2. Place the value inside a typehole by selecting an expression and opening the **Quick Fix** menu by pressing ⌘ + . (macOS) or ctrl + . (Windows) and selecting **Add a typehole**.
 
 ```typescript
-const data = typehole.t(response.data);
+type RedditResponse = any; // Type placeholder inserted by the extension
+const response = await axios.get("https://reddit.com/r/typescript.json");
+
+const data: RedditResponse = typehole.t(response.data);
 ```
 
 3. Run your code either in a browser or in Node.js. Typehole runtime captures the value and sends it back to your code editor. The VSCode extension records the captured value, turns all the values from that typehole into an interface and inserts it into the same module.
@@ -32,7 +39,7 @@ interface RedditResponse {
   /* ✨ Actual fields and types are automatically generated ✨ */
 }
 
-const response = await axios.get("https://reddit.com/r/videos.json");
+const response = await axios.get("https://reddit.com/r/typescript.json");
 const data: RedditResponse = typehole.t(response.data);
 ```
 
@@ -43,7 +50,7 @@ interface RedditResponse {
   /* ✨ Actual fields and types are automatically generated ✨ */
 }
 
-const response = await axios.get("https://reddit.com/r/videos.json");
+const response = await axios.get("https://reddit.com/r/typescript.json");
 const data: RedditResponse = response.data;
 ```
 
@@ -52,7 +59,7 @@ This plugin is still very experimental, so please expect and report issues.
 ## Features
 
 - Generate TypeScript types from runtime values
-- Augment your types by providing more runtime values<br/><br/><img width="500" src="./images/samples.gif" />
+- Run the code many times with different values thus augmenting your types<br/><br/><img width="500" src="./images/samples.gif" />
 
 - Wrap values automatically to typeholes with a code action<br/><br/><img width="500" src="./images/code-action.png" />
 
