@@ -38,6 +38,7 @@ import { addATypehole } from "./commands/addATypehole";
 import { removeTypeholesFromAllFiles } from "./commands/removeTypeholesFromAllFiles";
 import { removeTypeholesFromCurrentFile } from "./commands/removeTypeholesFromCurrentFile";
 import { diagnosticCollection } from "./diagnostics";
+import { ensureRuntime, isInstalling } from "./ensureRuntime";
 
 export const last = <T>(arr: T[]) => arr[arr.length - 1];
 
@@ -147,12 +148,18 @@ export async function activate(context: vscode.ExtensionContext) {
     const allHolesRemoved =
       previousState.holes.length > 0 && newState.holes.length === 0;
 
+    const shouldEnsureRuntime = previousState.holes.length !== newState.holes.length && newState.holes.length > 0
+
     previousState = newState;
 
     if (allHolesRemoved) {
       vscode.window.showInformationMessage("Typehole: Stopping the server");
       await stopListenerServer();
       vscode.window.showInformationMessage("Typehole: Server stopped");
+    }
+
+    if (shouldEnsureRuntime && !isInstalling()) {
+      await ensureRuntime();
     }
 
     if (newState.holes.length > 0 && !isServerRunning()) {
