@@ -139,15 +139,17 @@ async function onTypeExtracted(id: string, types: string) {
       projectRoot,
       relativePath,
       document.uri.path
-    )!;
+    );
+
+    if (!absolutePath) {
+      return error("TS Compiler couldn't resolve the import path");
+    }
 
     try {
       document = await vscode.workspace.openTextDocument(
         vscode.Uri.file(absolutePath)
       );
     } catch (err) {
-      console.log(err);
-
       return error(
         "Failed to open the document the imported type is referring to",
         absolutePath,
@@ -183,7 +185,6 @@ async function onTypeExtracted(id: string, types: string) {
     getEditorRange(typeAliasNode!.parent).start,
     typesToBeInserted
   );
-  console.log(workEdits);
 
   vscode.workspace.applyEdit(workEdits);
 
