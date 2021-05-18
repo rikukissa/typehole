@@ -96,10 +96,12 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ## Release Notes
 
-## [Unreleased]
+## [1.5.1] - 2021-05-18
 
 ### Fixed
 
+- Interface not updating when it was in a different file than the typehole
+- Types not updating when some other file was focused in the editor
 - `typehole.tNaN` [issue](https://github.com/rikukissa/typehole/issues/7) when there have been typeholes with a non `t<number>` format
 
 ## [1.5.0] - 2021-05-15

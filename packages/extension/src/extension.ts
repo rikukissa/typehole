@@ -57,15 +57,17 @@ export function getPlaceholderTypeName(document: ts.SourceFile) {
   while (results.length > 0) {
     n++;
 
-    results = tsquery.query(
-      document,
-      `TypeAliasDeclaration > Identifier[name="AutoDiscovered${n}"]`
-    ).concat(
-      tsquery.query(
+    results = tsquery
+      .query(
         document,
-        `InterfaceDeclaration > Identifier[name="AutoDiscovered${n}"]`
+        `TypeAliasDeclaration > Identifier[name="AutoDiscovered${n}"]`
       )
-    );
+      .concat(
+        tsquery.query(
+          document,
+          `InterfaceDeclaration > Identifier[name="AutoDiscovered${n}"]`
+        )
+      );
   }
 
   return "AutoDiscovered" + (n === 0 ? "" : n);
@@ -153,7 +155,9 @@ export async function activate(context: vscode.ExtensionContext) {
     const allHolesRemoved =
       previousState.holes.length > 0 && newState.holes.length === 0;
 
-    const shouldEnsureRuntime = previousState.holes.length !== newState.holes.length && newState.holes.length > 0
+    const shouldEnsureRuntime =
+      previousState.holes.length !== newState.holes.length &&
+      newState.holes.length > 0;
 
     previousState = newState;
 

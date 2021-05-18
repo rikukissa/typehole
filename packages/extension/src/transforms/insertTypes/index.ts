@@ -1,7 +1,22 @@
 import * as ts from "typescript";
 import { tsquery } from "@phenomnomnominal/tsquery";
-import { findTypeholes, printAST } from "../../parse/module";
+import { findTypeholes, getParentWithType, printAST } from "../../parse/module";
 import { unique } from "../../parse/utils";
+
+function findDeclarationInImportedDeclarations(
+  name: string,
+  ast: ts.Node
+): ts.ImportDeclaration | null {
+  return tsquery
+    .query(ast, `ImportSpecifier > Identifier[name="${name}"]`)
+    .concat(tsquery.query(ast, `ImportClause > Identifier[name="${name}"]`))
+    .map((node) =>
+      getParentWithType<ts.ImportDeclaration>(
+        node,
+        ts.SyntaxKind.ImportDeclaration
+      )
+    )[0];
+}
 
 function findDeclarationsWithName(name: string, ast: ts.Node) {
   return tsquery.query<ts.InterfaceDeclaration | ts.TypeAliasDeclaration>(
@@ -10,10 +25,22 @@ function findDeclarationsWithName(name: string, ast: ts.Node) {
   );
 }
 
-function findDeclarationWithName(name: string, ast: ts.Node): ts.Node | null {
+export function findDeclarationWithName(
+  name: string,
+  ast: ts.Node
+):
+  | ts.TypeAliasDeclaration
+  | ts.InterfaceDeclaration
+  | ts.ImportDeclaration
+  | null {
   const results = findDeclarationsWithName(name, ast);
   if (results.length === 0) {
-    return null;
+    const importStatement = findDeclarationInImportedDeclarations(name, ast);
+    if (!importStatement) {
+      return null;
+    }
+
+    return importStatement;
   }
   return results[0];
 }
@@ -126,7 +153,10 @@ export function findAllDependencyTypeDeclarations(
   return [];
 }
 
-export function getTypeAliasForId(id: string, ast: ts.Node) {
+export function getTypeReferenceNameForId(
+  id: string,
+  ast: ts.Node
+): string | null {
   const holes = findTypeholes(ast);
 
   const hole = holes.find(
@@ -136,7 +166,7 @@ export function getTypeAliasForId(id: string, ast: ts.Node) {
   );
 
   if (!hole) {
-    return;
+    return null;
   }
 
   const holeHasTypeVariable =
@@ -145,8 +175,7 @@ export function getTypeAliasForId(id: string, ast: ts.Node) {
     hole.typeArguments.length > 0;
 
   if (holeHasTypeVariable) {
-    const typeReference = hole.typeArguments![0].getText();
-    return findDeclarationWithName(typeReference, ast);
+    return hole.typeArguments![0].getText();
   }
   const variableDeclaration = getWrappingVariableDeclaration(hole);
 
@@ -159,10 +188,24 @@ export function getTypeAliasForId(id: string, ast: ts.Node) {
     const typeReference = (
       variableDeclaration as ts.VariableDeclaration
     ).type!.getText();
-    return findDeclarationWithName(typeReference, ast);
+    return typeReference;
+  }
+  return null;
+}
+export function getTypeAliasForId(
+  id: string,
+  ast: ts.Node
+):
+  | ts.ImportDeclaration
+  | ts.TypeAliasDeclaration
+  | ts.InterfaceDeclaration
+  | null {
+  const name = getTypeReferenceNameForId(id, ast);
+  if (!name) {
+    return null;
   }
 
-  return null;
+  return findDeclarationWithName(name, ast);
 }
 
 export function getWrappingVariableDeclaration(

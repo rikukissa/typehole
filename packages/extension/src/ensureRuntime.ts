@@ -1,9 +1,9 @@
+import { install, setPackageManager, setRootDir } from "lmify";
 import * as vscode from "vscode";
-import { install, setRootDir, setPackageManager } from "lmify";
 
-import { log, error } from "./logger";
-import { getProjectPath, getProjectURI } from "./editor/utils";
 import { getConfiguration, PackageManager } from "./config";
+import { getProjectRoot } from "./editor/utils";
+import { error, log } from "./logger";
 
 /*
  * A bit of a hack as require.resolve doesn't update it's cache
@@ -11,19 +11,6 @@ import { getConfiguration, PackageManager } from "./config";
  */
 
 let runtimeWasInstalledWhileExtensionIsRunning = false;
-
-
-async function getPackageJSONDirectories() {
-  const include = new vscode.RelativePattern(
-    getProjectURI()!,
-    "**/package.json"
-  );
-
-  const files = await vscode.workspace.findFiles(include);
-
-  // Done like this as findFiles didn't respect the exclude parameter
-  return files.filter((f) => !f.path.includes("node_modules"));
-}
 
 async function detectPackageManager(): Promise<PackageManager> {
   const npmLocks = await vscode.workspace.findFiles("package-lock.json");
@@ -35,28 +22,6 @@ async function detectPackageManager(): Promise<PackageManager> {
 
   if (yarnLocks.length > 0 && npmLocks.length === 0) {
     return "yarn";
-  }
-}
-
-async function resolveProjectRoot(
-  document: vscode.TextDocument,
-  options: vscode.Uri[]
-) {
-  const config = getConfiguration("", document.uri);
-  const answer = await vscode.window.showQuickPick(
-    options.map((o) => o.path.replace("/package.json", "")),
-    {
-      placeHolder: "Where should the runtime package be installed?",
-    }
-  );
-
-  if (answer) {
-    config.update(
-      "typehole.runtime.projectPath",
-      answer,
-      vscode.ConfigurationTarget.Workspace
-    );
-    return answer;
   }
 }
 
@@ -90,7 +55,7 @@ function isRuntimeInstalled(projectRoot: string) {
   try {
     log("Searching for runtime library in", projectRoot);
     require.resolve("typehole", {
-      paths: [projectRoot]
+      paths: [projectRoot],
     });
     return true;
   } catch (error) {
@@ -121,19 +86,15 @@ export async function ensureRuntime() {
   }
   setPackageManager(packageManager);
 
-  const packageRoots = await getPackageJSONDirectories();
-  let projectPath = getProjectPath();
-
-  if (packageRoots.length > 1) {
-    projectPath =
-      config.projectPath || (await resolveProjectRoot(document, packageRoots));
-  }
+  const projectPath = await getProjectRoot(document);
 
   if (!projectPath) {
     return;
   }
 
-  const installed = isRuntimeInstalled(projectPath) || runtimeWasInstalledWhileExtensionIsRunning;
+  const installed =
+    isRuntimeInstalled(projectPath) ||
+    runtimeWasInstalledWhileExtensionIsRunning;
 
   if (!installed && config.autoInstall) {
     installing = true;
@@ -165,5 +126,4 @@ export async function ensureRuntime() {
  "yarn add typehole"`);
     return;
   }
-
 }

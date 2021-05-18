@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as ts from "typescript";
 import { isValidSelection } from "./parse/expression";
 import { getAST } from "./parse/module";
 import {
