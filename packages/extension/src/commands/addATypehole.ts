@@ -10,7 +10,7 @@ import {
   startRenamingPlaceholderType,
 } from '../extension';
 import { findTypeholes, getAST, getNodeEndPosition, getNodeStartPosition, getParentOnRootLevel } from '../parse/module';
-import { getAvailableId } from '../state';
+import { getNextAvailableId } from '../state';
 import { getWrappingVariableDeclaration, insertGenericTypeParameter, insertTypeReference } from '../transforms/insertTypes';
 
 export async function addATypehole() {
@@ -22,7 +22,7 @@ export async function addATypehole() {
 
   const fullFile = document.getText();
   const ast = getAST(fullFile);
-  const id = getAvailableId();
+  const id = getNextAvailableId();
 
   await editor.edit((editBuilder) => {
     insertTypeholeImport(ast, editBuilder);

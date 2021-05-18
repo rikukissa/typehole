@@ -34,9 +34,6 @@ export function getTypeHoleImport() {
   );
 }
 
-export function getTypeHoleFactoryCall(id: number) {
-  return `const t${id === 0 ? "" : id} = typehole()`;
-}
 
 export function printAST(ast: ts.Node, sourceFile?: ts.SourceFile) {
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });

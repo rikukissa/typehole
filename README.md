@@ -98,6 +98,10 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ## [Unreleased]
 
+### Fixed
+
+- `typehole.tNaN` [issue](https://github.com/rikukissa/typehole/issues/7) when there have been typeholes with a non `t<number>` format
+
 ## [1.5.0] - 2021-05-15
 
 ### Added

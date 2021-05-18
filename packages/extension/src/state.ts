@@ -6,9 +6,10 @@ import { findTypeholes, getAST } from "./parse/module";
 
 export const events = new EventEmitter();
 
-type TypeHole = { id: number; fileName: string };
+type TypeHole = { id: string; fileName: string };
 
 let state = {
+  nextUniqueId: 0,
   warnings: {} as Record<string, vscode.Range[]>,
   holes: [] as TypeHole[],
   samples: {} as Record<string, any[]>,
@@ -16,11 +17,8 @@ let state = {
 
 export type State = typeof state;
 
-export function getAvailableId() {
-  if (state.holes.length === 0) {
-    return 0;
-  }
-  return Math.max(...state.holes.map((h) => h.id)) + 1;
+export function getNextAvailableId() {
+  return state.nextUniqueId;
 }
 
 export function clearWarnings(fileName: string) {
@@ -51,11 +49,11 @@ export function addWarning(fileName: string, range: vscode.Range) {
   });
 }
 
-export function getSamples(id: number) {
+export function getSamples(id: string) {
   return getState().samples[id] || [];
 }
 
-export function addSample(id: number, sample: any) {
+export function addSample(id: string, sample: any) {
   const currentState = getState();
   const existing = getSamples(id);
 
@@ -71,7 +69,7 @@ export function addSample(id: number, sample: any) {
   return newSamples;
 }
 
-function clearSamples(id: number, currentState: typeof state) {
+function clearSamples(id: string, currentState: typeof state) {
   return {
     ...currentState,
     samples: {
@@ -81,13 +79,17 @@ function clearSamples(id: number, currentState: typeof state) {
   };
 }
 
-function createTypehole(id: number, fileName: string) {
+function createTypehole(id: string, fileName: string) {
   const hole = { id, fileName };
   const currentState = getState();
-  setState({ ...currentState, holes: [...currentState.holes, hole] });
+  setState({
+    ...currentState,
+    nextUniqueId: currentState.nextUniqueId + 1,
+    holes: [...currentState.holes, hole],
+  });
 }
 
-function removeTypehole(id: number) {
+function removeTypehole(id: string) {
   const currentState = getState();
 
   setState(
@@ -138,6 +140,6 @@ export function onFileChanged(fileName: string, content: string) {
   });
 }
 
-export function getHole(id: number) {
+export function getHole(id: string) {
   return state.holes.find((hole) => hole.id === id);
 }
