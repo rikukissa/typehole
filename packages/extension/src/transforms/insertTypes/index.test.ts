@@ -1,6 +1,6 @@
 import { tsquery } from "@phenomnomnominal/tsquery";
 import { getAST } from "../../parse/module";
-
+import * as ts from "typescript";
 import {
   findAllDependencyTypeDeclarations,
   getAllDependencyTypeDeclarations,
@@ -98,4 +98,18 @@ test("finds all dependency type declarations from an ast when there are array ty
   expect(
     findAllDependencyTypeDeclarations(node.parent).map((n) => n.name.getText())
   ).toEqual(["AutoDiscovered", "IRootObjectItem"]);
+});
+
+test("finds dependent types from a ParenthesizedType", () => {
+  const ast = getAST(`export type Foo = (TypeholeRootWrapper | number);
+  interface TypeholeRootWrapper {
+    a: number;
+  }
+  `);
+
+  const node = tsquery.query(ast, 'Identifier[name="Foo"]')[0];
+
+  expect(
+    findAllDependencyTypeDeclarations(node.parent).map((n) => n.name.getText())
+  ).toEqual(["Foo", "TypeholeRootWrapper"]);
 });

@@ -19,10 +19,12 @@ function findDeclarationInImportedDeclarations(
 }
 
 function findDeclarationsWithName(name: string, ast: ts.Node) {
-  return tsquery.query<ts.InterfaceDeclaration | ts.TypeAliasDeclaration>(
+  const res = tsquery.query<ts.InterfaceDeclaration | ts.TypeAliasDeclaration>(
     ast,
     `:declaration > Identifier[name="${name}"]`
   );
+
+  return res;
 }
 
 export function findDeclarationWithName(
@@ -139,6 +141,10 @@ export function findAllDependencyTypeDeclarations(
         ),
       ];
     });
+  }
+  // (TypeholeRootWrapper | number)
+  if (ts.isParenthesizedTypeNode(node)) {
+    return findAllDependencyTypeDeclarations(node.type, [...found]);
   }
   if (
     ts.isArrayTypeNode(node) &&
