@@ -46,22 +46,6 @@ function sendSample(holeId: HoleId, input: any) {
   return sampleQueue;
 }
 
-const debounce = <F extends (...args: any[]) => any>(
-  func: F,
-  waitFor: number
-) => {
-  let timeout: NodeJS.Timeout;
-
-  return (...args: Parameters<F>): Promise<ReturnType<F>> =>
-    new Promise((resolve) => {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-
-      timeout = setTimeout(() => resolve(func(...args)), waitFor);
-    });
-};
-
 async function solveWrapperTypes(value: any) {
   if (typeof value?.then === "function") {
     return {
@@ -73,7 +57,7 @@ async function solveWrapperTypes(value: any) {
 }
 
 function typeholeFactory(id: HoleId) {
-  const emitSample = debounce(sendSample, 300);
+  const emitSample = sendSample;
   let previousValue: string | null = null;
 
   return function typehole<T = any>(input: T): T {
