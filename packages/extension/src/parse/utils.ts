@@ -89,3 +89,8 @@ export function lineCharacterPositionInText(
 export function unique<T>(value: T, index: number, self: T[]) {
   return self.indexOf(value) === index;
 }
+
+export function omit<T extends {}>(original: T, key: keyof T) {
+  const { [key]: value, ...withoutKey } = original;
+  return withoutKey;
+}

@@ -6,6 +6,53 @@ export function findTypeHoleImports(ast: ts.Node) {
     .query(ast, "ImportDeclaration > StringLiteral[text='typehole']")
     .map((s) => s.parent);
 }
+
+export function resolveImportPath(
+  projectRoot: string,
+  moduleName: string,
+  containingFile: string
+) {
+  const configFileName = ts.findConfigFile(
+    projectRoot,
+    ts.sys.fileExists,
+    "tsconfig.json"
+  );
+
+  if (!configFileName) {
+    return null;
+  }
+
+  const configFile = ts.readConfigFile(configFileName, ts.sys.readFile);
+
+  const compilerOptions = ts.parseJsonConfigFileContent(
+    configFile.config,
+    ts.sys,
+    "./",
+    undefined,
+    configFileName
+  );
+
+  function fileExists(fileName: string): boolean {
+    return ts.sys.fileExists(fileName);
+  }
+
+  function readFile(fileName: string): string | undefined {
+    return ts.sys.readFile(fileName);
+  }
+
+  const result = ts.resolveModuleName(
+    moduleName,
+    containingFile,
+    compilerOptions.options,
+    {
+      fileExists,
+      readFile,
+    }
+  );
+
+  return result.resolvedModule!.resolvedFileName;
+}
+
 export function findLastImport(ast: ts.Node) {
   const imports = tsquery.query(ast, "ImportDeclaration");
   return imports[imports.length - 1];
@@ -33,7 +80,6 @@ export function getTypeHoleImport() {
     )
   );
 }
-
 
 export function printAST(ast: ts.Node, sourceFile?: ts.SourceFile) {
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
@@ -82,4 +128,17 @@ export function someParentIs(
     return true;
   }
   return someParentIs(node.parent, test);
+}
+
+export function getParentWithType<T = ts.Node>(
+  node: ts.Node,
+  kind: ts.SyntaxKind
+): T | null {
+  if (!node.parent) {
+    return null;
+  }
+  if (node.kind === kind) {
+    return node as unknown as T;
+  }
+  return getParentWithType(node.parent, kind);
 }
