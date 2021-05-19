@@ -26,6 +26,7 @@ import { TypeHoler } from "./code-action";
 import {
   clearWarnings,
   events,
+  getAllHoles,
   getState,
   onFileChanged,
   onFileDeleted,
@@ -135,12 +136,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   let previousState = getState();
   events.on("change", async (newState: State) => {
-    const allHolesRemoved =
-      previousState.holes.length > 0 && newState.holes.length === 0;
+    const previousHoles = Object.values(previousState.holes);
+    const newHoles = Object.values(newState.holes);
+    const allHolesRemoved = previousHoles.length > 0 && newHoles.length === 0;
 
     const shouldEnsureRuntime =
-      previousState.holes.length !== newState.holes.length &&
-      newState.holes.length > 0;
+      previousHoles.length !== newHoles.length && newHoles.length > 0;
 
     previousState = newState;
 
@@ -154,7 +155,7 @@ export async function activate(context: vscode.ExtensionContext) {
       await ensureRuntime();
     }
 
-    if (newState.holes.length > 0 && !isServerRunning()) {
+    if (newHoles.length > 0 && !isServerRunning()) {
       try {
         vscode.window.showInformationMessage("Typehole: Starting server...");
         await startListenerServer();
@@ -178,7 +179,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   await Promise.all(existingFiles.map(fileChanged));
-  const holes = getState().holes;
+  const holes = getAllHoles();
   log("Found", holes.length.toString(), "holes in the workspace");
 
   /*

@@ -3,15 +3,16 @@ import * as vscode from "vscode";
 import { getId } from "./hole";
 import { log } from "./logger";
 import { findTypeholes, getAST } from "./parse/module";
+import { omit, unique } from "./parse/utils";
 
 export const events = new EventEmitter();
 
-type TypeHole = { id: string; fileName: string };
+export type Typehole = { id: string; fileNames: string[] };
 
 let state = {
   nextUniqueId: 0,
   warnings: {} as Record<string, vscode.Range[]>,
-  holes: [] as TypeHole[],
+  holes: {} as Record<string, Typehole>,
   samples: {} as Record<string, any[]>,
 };
 
@@ -80,28 +81,50 @@ function clearSamples(id: string, currentState: typeof state) {
 }
 
 function createTypehole(id: string, fileName: string) {
-  const hole = { id, fileName };
+  const existingHole = getHole(id);
+  const hole = existingHole
+    ? { id, fileNames: existingHole.fileNames.concat(fileName).filter(unique) }
+    : { id, fileNames: [fileName] };
   const currentState = getState();
   setState({
     ...currentState,
     nextUniqueId: currentState.nextUniqueId + 1,
-    holes: [...currentState.holes, hole],
+    holes: { ...currentState.holes, [id]: hole },
   });
 }
 
-function removeTypehole(id: string) {
+function removeTypeholeFromFile(id: string, fileName: string) {
   const currentState = getState();
 
-  setState(
-    clearSamples(id, {
-      ...currentState,
-      holes: currentState.holes.filter((h) => h.id !== id),
-    })
+  const hole = getHole(id);
+  if (!hole) {
+    return;
+  }
+  const fileFilesWithoutFile = hole?.fileNames.filter(
+    (file) => file !== fileName
   );
+  const wasOnlyFileWithTypehole = fileFilesWithoutFile.length === 0;
+
+  if (wasOnlyFileWithTypehole) {
+    const newHoles = omit(currentState.holes, id);
+    setState(
+      clearSamples(id, {
+        ...currentState,
+        holes: newHoles,
+      })
+    );
+  } else {
+    const holeWithoutFile = { ...hole, fileNames: fileFilesWithoutFile };
+    setState({
+      ...currentState,
+      holes: { ...currentState.holes, [id]: holeWithoutFile },
+    });
+  }
 }
 
 function setState(newState: typeof state): void {
   state = newState;
+
   events.emit("change", newState);
 }
 
@@ -109,15 +132,19 @@ export function getState() {
   return state;
 }
 
+export function getAllHoles() {
+  return Object.values(getState().holes);
+}
+
 export function onFileDeleted(fileName: string) {
-  getState()
-    .holes.filter((hole) => hole.fileName === fileName)
-    .forEach((h) => removeTypehole(h.id));
+  getAllHoles()
+    .filter((hole) => hole.fileNames.includes(fileName))
+    .forEach((h) => removeTypeholeFromFile(h.id, fileName));
 }
 
 export function onFileChanged(fileName: string, content: string) {
-  const knownHolesInThisFile = state.holes.filter(
-    (hole) => hole.fileName === fileName
+  const knownHolesInThisFile = getAllHoles().filter((hole) =>
+    hole.fileNames.includes(fileName)
   );
   const knownIds = knownHolesInThisFile.map(({ id }) => id);
 
@@ -135,11 +162,11 @@ export function onFileChanged(fileName: string, content: string) {
   knownIds.forEach((holeId) => {
     const holeHasBeenRemoved = !holesInDocument.includes(holeId);
     if (holeHasBeenRemoved) {
-      removeTypehole(holeId);
+      removeTypeholeFromFile(holeId, fileName);
     }
   });
 }
 
-export function getHole(id: string) {
-  return state.holes.find((hole) => hole.id === id);
+export function getHole(id: string): Typehole | undefined {
+  return state.holes[id];
 }

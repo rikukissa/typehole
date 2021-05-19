@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import { unique } from "../parse/utils";
-import { getState } from "../state";
+import { getAllHoles } from "../state";
 import { removeTypeholesFromFile } from "./removeTypeholesFromCurrentFile";
 
 export async function removeTypeholesFromAllFiles() {
-  const holes = getState().holes;
-  const files = holes.map((h) => h.fileName).filter(unique);
+  const holes = getAllHoles();
+  const files = holes.flatMap((h) => h.fileNames).filter(unique);
 
   for (const file of files) {
     let document: null | vscode.TextDocument = null;

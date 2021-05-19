@@ -1,6 +1,5 @@
 import { tsquery } from "@phenomnomnominal/tsquery";
 import f from "fastify";
-import { join } from "path";
 
 import * as ts from "typescript";
 import * as vscode from "vscode";
@@ -8,7 +7,7 @@ import * as vscode from "vscode";
 import { getEditorRange, getProjectRoot } from "./editor/utils";
 import { error, log } from "./logger";
 import { findTypeholes, getAST, resolveImportPath } from "./parse/module";
-import { addSample, addWarning, getHole } from "./state";
+import { addSample, addWarning, getHole, Typehole } from "./state";
 import {
   findDeclarationWithName,
   getAllDependencyTypeDeclarations,
@@ -102,14 +101,20 @@ async function onTypeExtracted(id: string, types: string) {
     return;
   }
 
+  for (const fileName of hole.fileNames) {
+    await updateTypes(hole, types, fileName);
+  }
+}
+
+async function updateTypes(hole: Typehole, types: string, fileName: string) {
   let document = await vscode.workspace.openTextDocument(
-    vscode.Uri.file(hole.fileName)
+    vscode.Uri.file(fileName)
   );
 
   if (!document) {
     error(
       "Document",
-      hole.fileName,
+      fileName,
       "a typehole was referring to was not found. This is not supposed to happen"
     );
     return;
@@ -117,13 +122,13 @@ async function onTypeExtracted(id: string, types: string) {
 
   let ast = getAST(document.getText());
 
-  let typeAliasNode = getTypeAliasForId(id, ast);
+  let typeAliasNode = getTypeAliasForId(hole.id, ast);
 
   if (!typeAliasNode) {
     return;
   }
 
-  const typeName = getTypeReferenceNameForId(id, ast)!;
+  const typeName = getTypeReferenceNameForId(hole.id, ast)!;
 
   /*
    * Type is imported from another file
