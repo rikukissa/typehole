@@ -100,6 +100,8 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ### Fixed
 
+- Multiple typeholes can now exist with the same id. Each update from all of them updates all types attached to the holes. Useful, for example, when you want to have multiple typeholes update the same type.
+- No duplicated interfaces anymore when the generated top-level type is a `ParenthesizedType`
 - Interface not updating when it was in a different file than the typehole
 - Types not updating when some other file was focused in the editor
 - `typehole.tNaN` [issue](https://github.com/rikukissa/typehole/issues/7) when there have been typeholes with a non `t<number>` format
