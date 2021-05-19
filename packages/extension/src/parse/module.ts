@@ -27,7 +27,9 @@ export function resolveImportPath(
   const compilerOptions = ts.parseJsonConfigFileContent(
     configFile.config,
     ts.sys,
-    "./"
+    "./",
+    undefined,
+    configFileName
   );
 
   function fileExists(fileName: string): boolean {

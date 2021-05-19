@@ -1,17 +1,27 @@
-import * as ts from 'typescript';
-import * as vscode from 'vscode';
+import * as ts from "typescript";
+import * as vscode from "vscode";
 
-import { getEditorRange } from '../editor/utils';
+import { getEditorRange } from "../editor/utils";
 import {
   getPlaceholderTypeName,
   insertRecorderToSelection,
   insertTypeholeImport,
   last,
   startRenamingPlaceholderType,
-} from '../extension';
-import { findTypeholes, getAST, getNodeEndPosition, getNodeStartPosition, getParentOnRootLevel } from '../parse/module';
-import { getNextAvailableId } from '../state';
-import { getWrappingVariableDeclaration, insertGenericTypeParameter, insertTypeReference } from '../transforms/insertTypes';
+} from "../extension";
+import {
+  findTypeholes,
+  getAST,
+  getNodeEndPosition,
+  getNodeStartPosition,
+  getParentOnRootLevel,
+} from "../parse/module";
+import { getNextAvailableId } from "../state";
+import {
+  getWrappingVariableDeclaration,
+  insertGenericTypeParameter,
+  insertTypeReference,
+} from "../transforms/insertTypes";
 
 export async function addATypehole() {
   const editor = vscode.window.activeTextEditor;
@@ -22,10 +32,12 @@ export async function addATypehole() {
 
   const fullFile = document.getText();
   const ast = getAST(fullFile);
+
   const id = getNextAvailableId();
 
   await editor.edit((editBuilder) => {
     insertTypeholeImport(ast, editBuilder);
+
     insertRecorderToSelection(id, editor, editBuilder);
   });
 
@@ -39,6 +51,7 @@ export async function addATypehole() {
     getWrappingVariableDeclaration(newlyCreatedTypeHole);
 
   const typeName = getPlaceholderTypeName(updatedAST);
+
   await editor.edit((editBuilder) => {
     if (variableDeclaration && !variableDeclaration.type) {
       insertTypeToVariableDeclaration(
@@ -121,4 +134,3 @@ function insertTypeToVariableDeclaration(
     );
   }
 }
-

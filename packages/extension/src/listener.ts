@@ -107,6 +107,11 @@ async function onTypeExtracted(id: string, types: string) {
   );
 
   if (!document) {
+    error(
+      "Document",
+      hole.fileName,
+      "a typehole was referring to was not found. This is not supposed to happen"
+    );
     return;
   }
 
@@ -120,13 +125,14 @@ async function onTypeExtracted(id: string, types: string) {
 
   const typeName = getTypeReferenceNameForId(id, ast)!;
 
-  const typeIsImportedFromAnotherFile = ts.isImportDeclaration(typeAliasNode);
   /*
    * Type is imported from another file
    */
+  const typeIsImportedFromAnotherFile = ts.isImportDeclaration(typeAliasNode);
   if (typeIsImportedFromAnotherFile) {
     const relativePath = tsquery(typeAliasNode, "StringLiteral")[0]
       ?.getText()
+      // "./types.ts" -> types.ts
       .replace(/["']/g, "");
 
     const projectRoot = await getProjectRoot(document);

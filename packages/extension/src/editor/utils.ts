@@ -28,7 +28,12 @@ export async function getPackageJSONDirectories() {
     "**/package.json"
   );
 
-  const files = await vscode.workspace.findFiles(include);
+  const exclude = new vscode.RelativePattern(
+    getProjectURI()!,
+    "**/node_modules/**"
+  );
+
+  const files = await vscode.workspace.findFiles(include, exclude);
 
   // Done like this as findFiles didn't respect the exclude parameter
   return files.filter((f) => !f.path.includes("node_modules"));
