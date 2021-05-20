@@ -8,6 +8,9 @@ export function getConfiguration(
   const configuration = vscode.workspace.getConfiguration(...params);
 
   return {
+    extensionPort: configuration.get(
+      "typehole.runtime.extensionPort"
+    ) as number,
     autoInstall: configuration.get("typehole.runtime.autoInstall") as boolean,
     projectPath: configuration.get("typehole.runtime.projectPath") as string,
     packageManager: configuration.get(

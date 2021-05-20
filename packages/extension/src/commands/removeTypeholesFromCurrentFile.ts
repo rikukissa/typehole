@@ -1,4 +1,6 @@
+import { tsquery } from "@phenomnomnominal/tsquery";
 import * as vscode from "vscode";
+import * as ts from "typescript";
 import { getEditorRange } from "../editor/utils";
 import {
   findTypeHoleImports,
@@ -16,7 +18,13 @@ export async function removeTypeholesFromFile(
   const ast = getAST(text);
   const typeholes = findTypeholes(ast);
 
-  const importStatements = findTypeHoleImports(ast);
+  const doesntIncludeConfigureImport = (node: ts.ImportDeclaration) =>
+    tsquery(node, `ImportSpecifier > Identifier[name="configure"]`).length ===
+    0;
+
+  const importStatements = findTypeHoleImports(ast).filter(
+    doesntIncludeConfigureImport
+  );
 
   // Cannot be done in just one editBuilder as hopes might overlap each other
   // and you'll get Error: Overlapping ranges are not allowed!

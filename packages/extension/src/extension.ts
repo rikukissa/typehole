@@ -40,6 +40,7 @@ import { removeTypeholesFromAllFiles } from "./commands/removeTypeholesFromAllFi
 import { removeTypeholesFromCurrentFile } from "./commands/removeTypeholesFromCurrentFile";
 import { diagnosticCollection } from "./diagnostics";
 import { ensureRuntime, isInstalling } from "./ensureRuntime";
+import { getConfiguration } from "./config";
 
 export const last = <T>(arr: T[]) => arr[arr.length - 1];
 
@@ -156,9 +157,12 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     if (newHoles.length > 0 && !isServerRunning()) {
+      const editor = vscode.window.activeTextEditor;
+      const document = editor?.document;
+      const config = getConfiguration("", document);
       try {
         vscode.window.showInformationMessage("Typehole: Starting server...");
-        await startListenerServer();
+        await startListenerServer(config.extensionPort);
         vscode.window.showInformationMessage("Typehole: Server ready");
       } catch (error) {
         vscode.window.showErrorMessage(
@@ -214,7 +218,10 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   vscode.commands.registerCommand("typehole.start-server", async () => {
-    startListenerServer();
+    const editor = vscode.window.activeTextEditor;
+    const document = editor?.document;
+    const config = getConfiguration("", document);
+    startListenerServer(config.extensionPort);
   });
   vscode.commands.registerCommand(
     "typehole.remove-from-current-file",

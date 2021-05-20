@@ -89,12 +89,19 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 | typehole.runtime.autoInstall    | boolean     | true    | Install Typehole runtime package automatically when the first typehole is added |
 | typehole.runtime.projectPath    | string      |         | Project directory where Typehole runtime should be installed                    |
 | typehole.runtime.packageManager | npm \| yarn | npm     | Package manager to be used when installing the runtime                          |
+| typehole.runtime.extensionPort  | number      | 17341   | HTTP port for HTTP extension to listen for incoming samples                     |
 
 ## Known Issues
 
 - Typehole server cannot be running in 2 VSCode editors at the same time as the server port is hard-coded to 17341
 
 ## Release Notes
+
+## [1.6.0] - 2021-05-20
+
+### Added
+
+- Options for configuring both the extension server port and runtime host address. Addresses [#13](https://github.com/rikukissa/typehole/issues/13)
 
 ## [1.5.1] - 2021-05-18
 

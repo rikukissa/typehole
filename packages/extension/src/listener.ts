@@ -64,12 +64,12 @@ function createServer() {
   return fastify;
 }
 
-export async function startListenerServer() {
+export async function startListenerServer(port: number) {
   log("Requesting HTTP server start");
-  running = true;
 
+  running = true;
   try {
-    await server.listen(17341);
+    await server.listen(port);
     log("HTTP server started");
   } catch (err) {
     error("Starting HTTP server failed");

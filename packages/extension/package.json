@@ -4,7 +4,7 @@
   "publisher": "rikurouvila",
   "description": "🧪  Take samples of runtime values and turn them into type definitions automatically",
   "repository": "https://github.com/rikukissa/typehole",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "private": true,
   "icon": "images/logo.png",
   "galleryBanner": {
@@ -30,6 +30,12 @@
             "type": "boolean",
             "default": true,
             "description": "Installs Typehole runtime package automatically when the first typehole is added",
+            "scope": "window"
+          },
+          "typehole.runtime.extensionPort": {
+            "type": "number",
+            "default": 17341,
+            "description": "HTTP port for HTTP extension to listen for incoming samples",
             "scope": "window"
           },
           "typehole.runtime.projectPath": {

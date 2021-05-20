@@ -14,8 +14,16 @@ function isPlainObject(value: any) {
 
 type HoleId = string | symbol | number;
 
+let config = {
+  extensionHost: "http://localhost:17341",
+};
+
+export function configure(newConfig: Partial<typeof config>) {
+  config = { ...config, ...newConfig };
+}
+
 function sendUnserializable(holeId: HoleId) {
-  return fetch("http://localhost:17341/unserializable", {
+  return fetch(`${config.extensionHost}/unserializable`, {
     method: "POST",
     mode: "cors",
     body: JSON.stringify({
@@ -31,7 +39,7 @@ function sendUnserializable(holeId: HoleId) {
 let sampleQueue: Promise<any> = Promise.resolve();
 function sendSample(holeId: HoleId, input: any) {
   sampleQueue = sampleQueue.then(() =>
-    fetch("http://localhost:17341/samples", {
+    fetch(`${config.extensionHost}/samples`, {
       method: "POST",
       mode: "cors",
       body: JSON.stringify({

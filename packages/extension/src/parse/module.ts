@@ -4,7 +4,7 @@ import { tsquery } from "@phenomnomnominal/tsquery";
 export function findTypeHoleImports(ast: ts.Node) {
   return tsquery
     .query(ast, "ImportDeclaration > StringLiteral[text='typehole']")
-    .map((s) => s.parent);
+    .map((s) => s.parent as ts.ImportDeclaration);
 }
 
 export function resolveImportPath(
