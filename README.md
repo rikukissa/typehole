@@ -91,6 +91,24 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 | typehole.runtime.packageManager | npm \| yarn | npm     | Package manager to be used when installing the runtime                          |
 | typehole.runtime.extensionPort  | number      | 17341   | HTTP port for HTTP extension to listen for incoming samples                     |
 
+## Runtime
+
+Typehole runtime's job is to captures values in your code and to send them to the extension. In some cases, the extension might not be running on the same host as your code, and you want to configure the address where the runtime sends the values. Node.js application running inside of a Docker container is one such case. In most cases, however, you do not need to configure anything.
+
+```typescript
+import typehole, { configure } from "typehole";
+
+configure({
+  extensionHost: "http://host.docker.internal:17341",
+});
+```
+
+### Available runtime settings
+
+| Setting       | Type   | Default                | Description                                                 |
+| ------------- | ------ | ---------------------- | ----------------------------------------------------------- |
+| extensionHost | string | http://localhost:17341 | The address in which the extension HTTP listener is running |
+
 ## Known Issues
 
 - Typehole server cannot be running in 2 VSCode editors at the same time as the server port is hard-coded to 17341
