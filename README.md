@@ -134,6 +134,12 @@ configure({
 
 ## Release Notes
 
+## [1.6.1] - 2021-05-22
+
+### Fixed
+
+- Fix the automatic formatting in files where types are inserted
+
 ## [1.6.0] - 2021-05-20
 
 ### Added

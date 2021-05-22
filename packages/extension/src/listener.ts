@@ -35,13 +35,7 @@ function createServer() {
 
   fastify.post("/samples", async (request, reply) => {
     const body = request.body as any;
-    log(
-      body.id,
-      "-",
-      "New sample",
-      JSON.stringify(request.body).substr(0, 30),
-      "received"
-    );
+    log(body.id, "-", "New sample", JSON.stringify(request.body), "received");
 
     const samples = addSample(body.id, body.sample);
     const typeString = samplesToType(samples);
@@ -200,7 +194,16 @@ async function updateTypes(hole: Typehole, types: string, fileName: string) {
   vscode.workspace.applyEdit(workEdits);
 
   try {
-    await vscode.commands.executeCommand("editor.action.formatDocument");
+    const workEdits = new vscode.WorkspaceEdit();
+    const edits = await vscode.commands.executeCommand<vscode.TextEdit[]>(
+      "vscode.executeFormatDocumentProvider",
+      document.uri
+    );
+
+    if (edits) {
+      workEdits.set(document.uri, edits);
+      vscode.workspace.applyEdit(workEdits);
+    }
   } catch (err) {
     error("Formatting the document failed", err.message);
   }
