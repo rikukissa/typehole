@@ -93,7 +93,26 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ## Runtime
 
-Typehole runtime's job is to captures values in your code and to send them to the extension. In some cases, the extension might not be running on the same host as your code, and you want to configure the address where the runtime sends the values. Node.js application running inside of a Docker container is one such case. In most cases, however, you do not need to configure anything.
+Typehole runtime's job is to captures values in your code and to send them to the extension in a serialized format.
+
+```typescript
+import typehole from "typehole";
+
+// -> POST http://extension/samples {"id": "t", "sample": "value"}
+typehole.t("value");
+
+// -> POST http://extension/samples {"id": "t1", "sample": 23423.432}
+typehole.t1(23423.432);
+
+// -> POST http://extension/samples {"id": "t2", "sample": {"some": "value"}}
+typehole.t2({ some: "value" });
+```
+
+Typeholes are identified by the method name of your typehole call. Call `.t2()` would give the whole the id "t2". The ids are there, so the extension knows from where the value is coming from in the code.
+
+In most cases, you should use unique keys for all holes. However, if you wish to record values from many holes into the same type, you might use the same id.
+
+In some cases, the extension might not be running on the same host as your code, and you want to configure the address where the runtime sends the values. Node.js application running inside of a Docker container is one such case. In most cases, however, you do not need to configure anything.
 
 ```typescript
 import typehole, { configure } from "typehole";
