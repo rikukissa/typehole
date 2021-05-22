@@ -77,6 +77,7 @@
   },
   "scripts": {
     "vscode:prepublish": "cp -r ../../README.md ../../images . && npm run compile",
+    "publish-extension": "vsce package && vsce publish",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",

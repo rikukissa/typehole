@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd packages/extension
+npm run publish-extension
+cd ../runtime
+npm publish
