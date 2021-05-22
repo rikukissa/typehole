@@ -99,12 +99,12 @@
   },
   "dependencies": {
     "@phenomnomnominal/tsquery": "^4.1.1",
+    "@riku/json-to-ts": "^2.0.0",
     "@types/esquery": "^1.0.1",
     "@types/npm": "^2.0.31",
     "esquery": "^1.4.0",
     "fastify": "^3.14.2",
     "fastify-cors": "^5.2.0",
-    "json-to-ts": "^1.7.0",
     "lmify": "^0.3.0",
     "npm": "^7.10.0",
     "pascalcase": "^0.1.1",

@@ -14,7 +14,7 @@ interface TypeholeRootWrapper2 {
   );
   expect(samplesToType([{ a: 2 }, { a: null }])).toBe(
     `interface TypeholeRoot {
-  a?: number;
+  a: null | number;
 }`
   );
 

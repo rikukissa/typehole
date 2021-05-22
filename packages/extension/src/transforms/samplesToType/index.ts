@@ -1,4 +1,4 @@
-import json2ts from "json-to-ts";
+import json2ts from "@riku/json-to-ts";
 
 export function samplesToType(samples: any[]): string {
   let wrapperType = null;
