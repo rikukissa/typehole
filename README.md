@@ -134,6 +134,12 @@ configure({
 
 ## Release Notes
 
+## [1.6.2] - 2021-05-22
+
+### Fixed
+
+- Fixes null values marking fields as optional. `[{"foo": null}, {"foo": 2}]` now generates a type `{foo: null | number}[]` and not `{foo?: number}[]` like it used to. Should fix [#14](https://github.com/rikukissa/typehole/issues/14)
+
 ## [1.6.1] - 2021-05-22
 
 ### Fixed
