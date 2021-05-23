@@ -108,7 +108,7 @@ typehole.t1(23423.432);
 typehole.t2({ some: "value" });
 ```
 
-Typeholes are identified by the method name of your typehole call. Call `.t2()` would give the whole the id "t2". The ids are there, so the extension knows from where the value is coming from in the code.
+Typeholes are identified by the method name of your typehole call. Call `.t2()` would give the hole an id "t2". The ids are there, so the extension knows from where the value is coming from in the code.
 
 In most cases, you should use unique keys for all holes. However, if you wish to record values from many holes into the same type, you might use the same id.
 
