@@ -41,7 +41,7 @@ const response = await axios.get("https://reddit.com/r/typescript.json");
 const data: RedditResponse = typehole.t(response.data);
 ```
 
-3. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#Commands) for easy removal of typeholes.
+4. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#Commands) for easy removal of typeholes.
 
 ```typescript
 interface RedditResponse {
