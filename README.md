@@ -41,7 +41,7 @@ const response = await axios.get("https://reddit.com/r/typescript.json");
 const data: RedditResponse = typehole.t(response.data);
 ```
 
-3. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#Commands) for easy removal of typeholes.
+4. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#Commands) for easy removal of typeholes.
 
 ```typescript
 interface RedditResponse {
@@ -108,7 +108,7 @@ typehole.t1(23423.432);
 typehole.t2({ some: "value" });
 ```
 
-Typeholes are identified by the method name of your typehole call. Call `.t2()` would give the whole the id "t2". The ids are there, so the extension knows from where the value is coming from in the code.
+Typeholes are identified by the method name of your typehole call. Call `.t2()` would give the hole an id "t2". The ids are there, so the extension knows from where the value is coming from in the code.
 
 In most cases, you should use unique keys for all holes. However, if you wish to record values from many holes into the same type, you might use the same id.
 
