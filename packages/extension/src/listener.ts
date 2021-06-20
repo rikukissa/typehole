@@ -191,7 +191,7 @@ async function updateTypes(hole: Typehole, types: string, fileName: string) {
     typesToBeInserted
   );
 
-  vscode.workspace.applyEdit(workEdits);
+  await vscode.workspace.applyEdit(workEdits);
 
   try {
     const workEdits = new vscode.WorkspaceEdit();
@@ -202,7 +202,7 @@ async function updateTypes(hole: Typehole, types: string, fileName: string) {
 
     if (edits) {
       workEdits.set(document.uri, edits);
-      vscode.workspace.applyEdit(workEdits);
+      await vscode.workspace.applyEdit(workEdits);
     }
   } catch (err) {
     error("Formatting the document failed", err.message);

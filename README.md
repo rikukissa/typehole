@@ -134,6 +134,12 @@ configure({
 
 ## Release Notes
 
+## [1.6.3] - 2021-06-20
+
+### Fixed
+
+- Fixes code formatting generating broken / duplicate code
+
 ## [1.6.2] - 2021-05-22
 
 ### Fixed
