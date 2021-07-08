@@ -11,6 +11,9 @@ export function getConfiguration(
     extensionPort: configuration.get(
       "typehole.runtime.extensionPort"
     ) as number,
+    typeOrInterface: configuration.get("typehole.typeOrInterface") as
+      | "interface"
+      | "type",
     autoInstall: configuration.get("typehole.runtime.autoInstall") as boolean,
     projectPath: configuration.get("typehole.runtime.projectPath") as string,
     packageManager: configuration.get(

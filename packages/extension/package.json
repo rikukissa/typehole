@@ -4,7 +4,7 @@
   "publisher": "rikurouvila",
   "description": "🧪  Take samples of runtime values and turn them into type definitions automatically",
   "repository": "https://github.com/rikukissa/typehole",
-  "version": "1.6.3",
+  "version": "1.8.0",
   "private": true,
   "icon": "images/logo.png",
   "galleryBanner": {
@@ -30,6 +30,16 @@
             "type": "boolean",
             "default": true,
             "description": "Installs Typehole runtime package automatically when the first typehole is added",
+            "scope": "window"
+          },
+          "typehole.typeOrInterface": {
+            "type": "string",
+            "enum": [
+              "type",
+              "interface"
+            ],
+            "default": "interface",
+            "description": "Keyword to be used for generated types",
             "scope": "window"
           },
           "typehole.runtime.extensionPort": {
@@ -99,7 +109,7 @@
   },
   "dependencies": {
     "@phenomnomnominal/tsquery": "^4.1.1",
-    "@riku/json-to-ts": "^2.0.0",
+    "@riku/json-to-ts": "^2.1.0",
     "@types/esquery": "^1.0.1",
     "@types/npm": "^2.0.31",
     "esquery": "^1.4.0",

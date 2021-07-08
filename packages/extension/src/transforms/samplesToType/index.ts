@@ -1,6 +1,10 @@
 import json2ts from "@riku/json-to-ts";
+import { Options } from "@riku/json-to-ts/build/src/model";
 
-export function samplesToType(samples: any[]): string {
+export function samplesToType(
+  samples: any[],
+  jsonToTSOptions?: Options
+): string {
   let wrapperType = null;
   let samplesWithoutWrapperTypes = [];
   for (const sample of samples) {
@@ -13,9 +17,12 @@ export function samplesToType(samples: any[]): string {
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const types = json2ts({
-    __typeholeRootWrapper__: samplesWithoutWrapperTypes,
-  }).join("\n");
+  const types = json2ts(
+    {
+      __typeholeRootWrapper__: samplesWithoutWrapperTypes,
+    },
+    jsonToTSOptions
+  ).join("\n");
 
   let root = types
     .match(/__typeholeRootWrapper__:\s(.+)/)![1]

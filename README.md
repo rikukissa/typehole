@@ -84,12 +84,13 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ## Extension Settings
 
-| Setting                         | Type        | Default | Description                                                                     |
-| ------------------------------- | ----------- | ------- | ------------------------------------------------------------------------------- |
-| typehole.runtime.autoInstall    | boolean     | true    | Install Typehole runtime package automatically when the first typehole is added |
-| typehole.runtime.projectPath    | string      |         | Project directory where Typehole runtime should be installed                    |
-| typehole.runtime.packageManager | npm \| yarn | npm     | Package manager to be used when installing the runtime                          |
-| typehole.runtime.extensionPort  | number      | 17341   | HTTP port for HTTP extension to listen for incoming samples                     |
+| Setting                         | Type              | Default   | Description                                                                     |
+| ------------------------------- | ----------------- | --------- | ------------------------------------------------------------------------------- |
+| typehole.runtime.autoInstall    | boolean           | true      | Install Typehole runtime package automatically when the first typehole is added |
+| typehole.runtime.projectPath    | string            |           | Project directory where Typehole runtime should be installed                    |
+| typehole.runtime.packageManager | npm \| yarn       | npm       | Package manager to be used when installing the runtime                          |
+| typehole.runtime.extensionPort  | number            | 17341     | HTTP port for HTTP extension to listen for incoming samples                     |
+| typehole.typeOrInterface        | interface \| type | interface | Keyword to be used for generated types                                          |
 
 ## Runtime
 
@@ -133,6 +134,12 @@ configure({
 - Typehole server cannot be running in 2 VSCode editors at the same time as the server port is hard-coded to 17341
 
 ## Release Notes
+
+## [1.7.0] - 2021-07-08
+
+### Added
+
+- New option "typehole.typeOrInterface" added for using `type` keyword instead of `interface`. All thanks to @akafaneh 🎉
 
 ## [1.6.3] - 2021-06-20
 

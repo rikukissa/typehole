@@ -7,6 +7,12 @@ interface TypeholeRootWrapper2 {
   a: number;
 }`
   );
+  expect(samplesToType([1, { a: 2 }, true, null], { useTypeAlias: true })).toBe(
+    `type TypeholeRoot = (boolean | TypeholeRootWrapper2 | null | number);
+type TypeholeRootWrapper2 = {
+  a: number;
+}`
+  );
   expect(samplesToType([{ a: 2 }])).toBe(
     `interface TypeholeRoot {
   a: number;

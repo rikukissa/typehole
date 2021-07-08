@@ -3,6 +3,7 @@ import f from "fastify";
 
 import * as ts from "typescript";
 import * as vscode from "vscode";
+import { getConfiguration } from "./config";
 
 import { getEditorRange, getProjectRoot } from "./editor/utils";
 import { error, log } from "./logger";
@@ -37,8 +38,14 @@ function createServer() {
     const body = request.body as any;
     log(body.id, "-", "New sample", JSON.stringify(request.body), "received");
 
+    const editor = vscode.window.activeTextEditor;
+    const document = editor?.document;
+    const config = getConfiguration("", document);
+
     const samples = addSample(body.id, body.sample);
-    const typeString = samplesToType(samples);
+    const typeString = samplesToType(samples, {
+      useTypeAlias: config.typeOrInterface === "type",
+    });
 
     try {
       await onTypeExtracted(body.id, typeString);
