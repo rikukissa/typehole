@@ -2,6 +2,8 @@
 
 Automatically generate TypeScript types and interfaces for all serializable runtime values.
 
+[English](#) | [简体中文](./docs/zh.md)
+
 Typehole is a TypeScript development tool for Visual Studio Code that automates creating static typing by bridging runtime values from your Node.js or browser application to your code editor. It's useful when you need types for an API response or want to figure out types for values coming from a JS module.
 <br/>
 <br/>
