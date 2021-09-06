@@ -2,6 +2,8 @@
 
 为所有运行时可序列化的值自动生成 Typescript 类型和接口
 
+[English](../README.md) | [简体中文](#)
+
 Typehole 是 Visual Studio Code 的 TypeScript 开发工具，它通过将运行时的值从 Node.js 或浏览器应用程序中桥接到代码编辑器来自动创建静态类型。当您需要 API 响应的类型或想要得到来自 JS 模块值的类型时，它是非常有用的。
 <br/>
 <br/>
