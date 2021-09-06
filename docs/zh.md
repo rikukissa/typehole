@@ -16,7 +16,7 @@ Typehole 是 Visual Studio Code 的 TypeScript 开发工具，它通过将运行
 
 ## 它是如何工作的?
 
-1. 从一个接口中获得 `any` / `unknown` 类型的值的类型
+1. 从一个接口中获得 `any` / `unknown` 类型的值的类型。
 
 ```typescript
 const response = await axios.get("https://reddit.com/r/typescript.json");
