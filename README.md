@@ -43,7 +43,7 @@ const response = await axios.get("https://reddit.com/r/typescript.json");
 const data: RedditResponse = typehole.t(response.data);
 ```
 
-4. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#Commands) for easy removal of typeholes.
+4. Remove the typehole, and you're done. Typeholes are meant to be development-time only, so you shouldn't commit them. Typehole provides you with 2 [commands](#commands) for easy removal of typeholes.
 
 ```typescript
 interface RedditResponse {
@@ -96,7 +96,7 @@ From 1.4.0 forward also Promises are supported. All other values (functions etc.
 
 ## Runtime
 
-Typehole runtime's job is to captures values in your code and to send them to the extension in a serialized format.
+Typehole runtime's job is to capture values in your code and to send them to the extension in a serialized format.
 
 ```typescript
 import typehole from "typehole";
