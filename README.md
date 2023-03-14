@@ -137,6 +137,12 @@ configure({
 
 ## Release Notes
 
+## [1.8.0] - 2023-03-14
+
+### Added
+
+- Add native NodeJS ESM modules support [#24](https://github.com/rikukissa/typehole/pull/24)
+
 ## [1.7.0] - 2021-07-08
 
 ### Added
