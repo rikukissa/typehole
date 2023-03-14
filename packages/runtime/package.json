@@ -5,6 +5,11 @@
   "description": "Turn runtime types into static typescript types automatically",
   "unpkg": "dist/index.min.js",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "exports": {
+    "require": "./dist/index.js",
+    "import": "./dist/index.mjs"
+  },
   "types": "types/index.d.ts",
   "license": "MIT",
   "author": {

@@ -12,6 +12,11 @@ export default {
 			sourcemap: false,
 		},
 		{
+			format: "esm",
+			file: pkg.module,
+			sourcemap: false,
+		},
+		{
 			name: pkg["umd:name"] || pkg.name,
 			format: "umd",
 			file: pkg.unpkg,
